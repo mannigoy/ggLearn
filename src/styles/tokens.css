@@ -1,0 +1,16 @@
+:root {
+  --ink: #12372A;
+  --ink-muted: #5E7A6B;
+  --paper: #F1F8F1;
+  --grid-line: #DCEBDD;
+  --surface: #FFFFFF;
+  --leaf: #5BAE5B;
+  --leaf-soft: #CFEFCF;
+  --sun: #FFD23F;
+  --coral: #F0805A;
+  --sky: #DCEFFB;
+  --peach: #FFE3D3;
+  --butter: #FFF4C2;
+  --lavender: #E6E3FA;
+  --error: #C2432F;
+}

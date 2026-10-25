@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function validName(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 80;
+    }
+
+    // users/{uid}: one profile per account.
+    // - Sign-up creates your own profile as student or pending_teacher only.
+    // - You may rename yourself; you can never change your own role or email.
+    // - Admins can read everyone and change other users' roles (not their own,
+    //   so the last admin can't lock themselves out).
+    // - The first admin is set by hand in the Firebase console.
+    match /users/{uid} {
+      allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
+
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'createdAt'])
+        && request.resource.data.role in ['student', 'pending_teacher']
+        && request.resource.data.email == request.auth.token.email
+        && validName(request.resource.data)
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && validName(request.resource.data);
+
+      allow update: if isAdmin()
+        && request.auth.uid != uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'roleUpdatedAt', 'roleUpdatedBy'])
+        && request.resource.data.role in ['student', 'pending_teacher', 'teacher', 'admin']
+        && request.resource.data.roleUpdatedAt == request.time
+        && request.resource.data.roleUpdatedBy == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
