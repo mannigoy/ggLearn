@@ -1,122 +1,186 @@
 import { useState } from 'react';
 import Confirm from '../../components/ui/Confirm.jsx';
+import { Empty, ErrorState, Loading } from '../../components/ui/States.jsx';
 import { ROLE_LABELS, ROLES } from '../../constants/index.js';
-import { setUserRole } from '../../services/userService.js';
+import { useAsync } from '../../hooks/useAsync.js';
+import { createUser, deleteUser, listUsers, setDisabled, setRole, updateUser } from '../../services/adminUserApi.js';
+import UserForm from './UserForm.jsx';
 
-const joined = (createdAt) => createdAt?.toDate?.().toLocaleDateString() ?? '—';
+const SELF_TITLE = 'You can’t change your own account here.';
+const joined = (createdAt) => (createdAt ? new Date(createdAt).toLocaleDateString() : '—');
 
-function UserRow({ person, isSelf, onSave }) {
+const FILTERS = [
+  { key: 'all', label: 'All', test: () => true },
+  { key: 'students', label: 'Students', test: (u) => u.role === ROLES.STUDENT },
+  { key: 'teachers', label: 'Teachers', test: (u) => u.role === ROLES.TEACHER },
+  { key: 'pending', label: 'Pending', test: (u) => u.role === ROLES.PENDING_TEACHER },
+  { key: 'admins', label: 'Admins', test: (u) => u.role === ROLES.ADMIN },
+  { key: 'off', label: 'Turned off', test: (u) => u.disabled }
+];
+
+function UserRow({ person, isSelf, busy, onEdit, onRole, onToggle, onDelete }) {
   const [draft, setDraft] = useState(person.role);
   const [prevRole, setPrevRole] = useState(person.role);
-  // Reset the dropdown when the saved role changes (e.g. another admin edited it).
+  // Reset the dropdown when the saved role changes.
   if (person.role !== prevRole) {
     setPrevRole(person.role);
     setDraft(person.role);
   }
+  const title = isSelf ? SELF_TITLE : undefined;
+  const sr = <span className="sr-only"> {person.name}</span>;
 
   return (
     <li className="item admin-user">
       <div className="grow">
-        <b>{person.name}</b>{isSelf && <span className="chip tint-butter">You</span>}
-        <small className="muted">{person.email} · joined {joined(person.createdAt)}</small>
+        <b>{person.name}</b>
+        {isSelf && <span className="chip tint-butter">You</span>}
+        {person.disabled && <span className="chip coral">Turned off</span>}
+        <small className="muted">
+          {person.email} · {ROLE_LABELS[person.role] ?? person.role} · joined {joined(person.createdAt)}
+        </small>
       </div>
       <div className="admin-role">
         <label className="sr-only" htmlFor={`role-${person.uid}`}>Role for {person.name}</label>
         <select
           id={`role-${person.uid}`}
           value={draft}
-          disabled={isSelf}
-          title={isSelf ? 'You can’t change your own role.' : undefined}
+          disabled={isSelf || busy}
+          title={title}
           onChange={(e) => setDraft(e.target.value)}
         >
           {Object.values(ROLES).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
         </select>
-        {draft !== person.role && <Confirm label="Save" onYes={() => onSave(person, draft)} />}
+        {draft !== person.role && !isSelf && <Confirm label={<>Save<span className="sr-only"> role for {person.name}</span></>} onYes={() => onRole(person, draft)} />}
+        {isSelf ? (
+          <>
+            <button type="button" className="btn small plain" disabled title={title}>Edit{sr}</button>
+            <button type="button" className="btn small plain" disabled title={title}>Turn off{sr}</button>
+            <button type="button" className="btn small plain" disabled title={title}>Delete{sr}</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className="btn small plain" disabled={busy} onClick={() => onEdit(person)}>Edit{sr}</button>
+            <Confirm
+              label={<>{person.disabled ? 'Turn on' : 'Turn off'}{sr}</>}
+              onYes={() => onToggle(person)}
+            />
+            <Confirm
+              label={<>Delete{sr}</>}
+              message="This deletes the account and its enrollments. Courses they teach are kept."
+              onYes={() => onDelete(person)}
+            />
+          </>
+        )}
       </div>
     </li>
   );
 }
 
-export default function AdminPage({ user, users, loadError }) {
-  const [saveError, setError] = useState('');
+export default function AdminPage({ user, onUsersChanged }) {
+  const users = useAsync(listUsers, []);
+  const [filter, setFilter] = useState('all');
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [notice, setNotice] = useState('');
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const error = saveError || loadError;
+  const [actionError, setActionError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const save = async (person, role) => {
+  const changed = () => {
+    users.reload();
+    onUsersChanged?.();
+  };
+
+  const run = async (action, message) => {
+    if (busy) return;
     setNotice('');
-    setError('');
+    setActionError('');
+    setBusy(true);
     try {
-      await setUserRole(person.uid, role, user.uid);
-      setNotice(`${person.name} is now ${ROLE_LABELS[role].toLowerCase()}.`);
+      await action();
+      if (message) setNotice(message);
     } catch (err) {
-      console.error('[GG] set role', err);
-      setError(err?.code === 'permission-denied'
-        ? 'That change was blocked. Admins can’t change their own role.'
-        : 'Couldn’t save that change. Try again.');
+      setActionError(err.message);
+    } finally {
+      setBusy(false);
+      changed();
     }
   };
 
-  if (error && !users) return <><h1>Users</h1><p className="alert" role="alert">{error}</p></>;
-  if (!users) return <><h1>Users</h1><p className="muted" role="status">Loading users…</p></>;
+  const add = async (body) => {
+    await createUser(body);
+    setAdding(false);
+    setNotice(`${body.name} was added.`);
+    changed();
+  };
 
-  const pending = users.filter((u) => u.role === ROLES.PENDING_TEACHER);
-  const term = search.trim().toLowerCase();
-  const shown = users.filter((u) => (roleFilter === 'all' || u.role === roleFilter)
-    && (!term || u.name?.toLowerCase().includes(term) || u.email?.toLowerCase().includes(term)));
+  const edit = async (body) => {
+    await updateUser(editing.uid, body);
+    setEditing(null);
+    setNotice(`${body.name} was updated.`);
+    changed();
+  };
 
-  return (
-    <>
-      <h1>Users</h1>
-      {error && <p className="alert" role="alert">{error}</p>}
-      {notice && <p className="alert" role="status">{notice}</p>}
+  const saveRole = (p, role) =>
+    run(() => setRole(p.uid, role), `${p.name} is now ${ROLE_LABELS[role].toLowerCase()}.`);
+  const toggle = (p) =>
+    run(() => setDisabled(p.uid, !p.disabled), `${p.name} was turned ${p.disabled ? 'on' : 'off'}.`);
+  const remove = (p) => run(() => deleteUser(p.uid), `${p.name} was deleted.`);
 
-      <section className="card notebook" aria-labelledby="pending-title">
-        <h2 id="pending-title">Teacher requests {pending.length > 0 && <span className="chip tint-sun">{pending.length}</span>}</h2>
-        {pending.length === 0 ? (
-          <p className="muted">No one is waiting for approval.</p>
+  if (adding) return <UserForm isNew onSave={add} onCancel={() => setAdding(false)} />;
+  if (editing) return <UserForm initial={editing} onSave={edit} onCancel={() => setEditing(null)} />;
+
+  let body;
+  if (users.loading) body = <Loading label="Loading users…" />;
+  else if (users.error) body = <ErrorState message={users.error} onRetry={users.reload} />;
+  else {
+    const active = FILTERS.find((f) => f.key === filter);
+    const shown = users.data.filter(active.test);
+    body = (
+      <>
+        <div className="admin-filters" role="group" aria-label="Filter users">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className={`chip${filter === f.key ? ' mint' : ''}`}
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {shown.length === 0 ? (
+          <Empty title="No users match">Try another filter.</Empty>
         ) : (
           <ul className="plain-list">
-            {pending.map((p) => (
-              <li key={p.uid} className="item">
-                <div className="grow">
-                  <b>{p.name}</b>
-                  <small className="muted">{p.email} · joined {joined(p.createdAt)}</small>
-                </div>
-                <div className="admin-role">
-                  <button type="button" className="btn small green" onClick={() => save(p, ROLES.TEACHER)}>Approve</button>
-                  <Confirm label="Decline" onYes={() => save(p, ROLES.STUDENT)} />
-                </div>
-              </li>
+            {shown.map((p) => (
+              <UserRow
+                key={p.uid}
+                person={p}
+                isSelf={p.uid === user.uid}
+                busy={busy}
+                onEdit={setEditing}
+                onRole={saveRole}
+                onToggle={toggle}
+                onDelete={remove}
+              />
             ))}
           </ul>
         )}
-      </section>
+      </>
+    );
+  }
 
-      <section className="card" aria-labelledby="all-title">
-        <h2 id="all-title">All users <span className="muted">({users.length})</span></h2>
-        <div className="admin-filters">
-          <div className="field">
-            <label htmlFor="user-search">Search</label>
-            <input id="user-search" type="search" placeholder="Name or email" value={search} onChange={(e) => setSearch(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="user-role-filter">Role</label>
-            <select id="user-role-filter" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-              <option value="all">All roles</option>
-              {Object.values(ROLES).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-            </select>
-          </div>
-        </div>
-        {shown.length === 0 ? (
-          <p className="muted">No users match.</p>
-        ) : (
-          <ul className="plain-list">
-            {shown.map((p) => <UserRow key={p.uid} person={p} isSelf={p.uid === user.uid} onSave={save} />)}
-          </ul>
-        )}
-      </section>
+  return (
+    <>
+      <div className="page-head">
+        <h1>Users</h1>
+        <button type="button" className="btn" onClick={() => setAdding(true)}>Add a user</button>
+      </div>
+      {actionError && <p className="alert" role="alert">{actionError}</p>}
+      {notice && <p className="alert" role="status">{notice}</p>}
+      <section className="card" aria-label="All users">{body}</section>
     </>
   );
 }

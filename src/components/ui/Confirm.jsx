@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function Confirm({ label, onYes }) {
+export default function Confirm({ label, onYes, message = 'Sure?' }) {
   const [on, setOn] = useState(false);
 
   if (!on) {
@@ -8,7 +8,7 @@ export default function Confirm({ label, onYes }) {
   }
   return (
     <span className="confirm">
-      Sure?
+      {message}
       <button type="button" className="btn small red" onClick={onYes}>Yes</button>
       <button type="button" className="btn small plain" onClick={() => setOn(false)}>No</button>
     </span>

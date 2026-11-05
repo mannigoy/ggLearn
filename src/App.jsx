@@ -3,7 +3,7 @@ import AppShell from './components/layout/AppShell.jsx'
 import { ROLES } from './constants/index.js'
 import useNav from './hooks/useNav.js'
 import useStore from './hooks/useStore.js'
-import useUsers from './hooks/useUsers.js'
+import { useAsync } from './hooks/useAsync.js'
 import AdminPage from './pages/admin/AdminPage.jsx'
 import CoursePage from './pages/courses/CoursePage.jsx'
 import CoursesPage from './pages/courses/CoursesPage.jsx'
@@ -14,6 +14,7 @@ import Overview from './pages/app/Overview.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import ChangePassword from './pages/auth/ChangePassword.jsx'
 import Site from './pages/public/Site.jsx'
+import { listUsers } from './services/adminUserApi.js'
 import { setUnauthorizedHandler } from './services/api.js'
 
 const SECTIONS = { home: 'Overview', courses: 'Courses', course: 'Courses', lesson: 'Courses', quiz: 'Courses', badges: 'Badges', admin: 'Users', password: 'Account' }
@@ -22,8 +23,9 @@ export default function App() {
   const { user, authLoading, login, register, logout } = useStore()
   const { view, pub, go, goPub, openAuth, resetPublic } = useNav()
   const isAdmin = user?.role === ROLES.ADMIN
-  const { users, error: usersError } = useUsers(isAdmin)
-  const pendingCount = users?.filter((u) => u.role === ROLES.PENDING_TEACHER).length ?? 0
+  // Hooks can't be conditional, so non-admins load an empty list.
+  const users = useAsync(() => (isAdmin ? listUsers() : Promise.resolve([])), [isAdmin])
+  const pendingCount = users.data?.filter((u) => u.role === ROLES.PENDING_TEACHER).length ?? 0
 
   const handleLogout = async () => {
     await logout()
@@ -55,7 +57,7 @@ export default function App() {
         pendingCount={pendingCount}
         onLogout={handleLogout}
       >
-        {page === 'admin' && <AdminPage user={user} users={users} loadError={usersError} />}
+        {page === 'admin' && <AdminPage user={user} onUsersChanged={users.reload} />}
         {page === 'password' && <ChangePassword />}
         {page === 'courses' && <CoursesPage user={user} go={go} />}
         {page === 'course' && <CoursePage user={user} id={view.id} tab={view.tab} go={go} />}
