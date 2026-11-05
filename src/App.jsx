@@ -6,7 +6,9 @@ import useStore from './hooks/useStore.js'
 import useUsers from './hooks/useUsers.js'
 import AdminPage from './pages/admin/AdminPage.jsx'
 import ComingSoon from './pages/app/ComingSoon.jsx'
+import CoursePage from './pages/courses/CoursePage.jsx'
 import CoursesPage from './pages/courses/CoursesPage.jsx'
+import BadgesPage from './pages/badges/BadgesPage.jsx'
 import Overview from './pages/app/Overview.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import ChangePassword from './pages/auth/ChangePassword.jsx'
@@ -56,10 +58,10 @@ export default function App() {
         {page === 'admin' && <AdminPage user={user} users={users} loadError={usersError} />}
         {page === 'password' && <ChangePassword />}
         {page === 'courses' && <CoursesPage user={user} go={go} />}
-        {page === 'course' && <ComingSoon title="Course" onBack={back} />}
+        {page === 'course' && <CoursePage user={user} id={view.id} tab={view.tab} go={go} />}
         {page === 'lesson' && <ComingSoon title="Lesson" onBack={back} />}
         {page === 'quiz' && <ComingSoon title="Quiz" onBack={back} />}
-        {page === 'badges' && <ComingSoon title="Badges" onBack={() => go({ name: 'home' })} />}
+        {page === 'badges' && <BadgesPage />}
         {page === 'home' && <Overview user={user} pendingCount={pendingCount} go={go} />}
       </AppShell>
     )
