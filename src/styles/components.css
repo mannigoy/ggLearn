@@ -116,9 +116,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--sky); outline: n
 .admin-user .chip { margin-left: 8px; }
 .admin-role { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .admin-role select { width: auto; min-height: 48px; padding: 6px 14px; font-size: var(--step-small); }
-.admin-filters { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+/* Filter chips are real buttons: wrap in a row and keep a 48px tap target. */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.filter-chip { min-height: 48px; padding: 6px 18px; border: 0; color: inherit; font-family: inherit; cursor: pointer; }
+.filter-chip.on { background: var(--mint); }
+.filter-chip:focus-visible { outline: 3px solid var(--ink, currentColor); outline-offset: 2px; }
 .confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 800; }
-@media (max-width: 560px) { .admin-filters { grid-template-columns: 1fr; } }
 
 /* bouncy micro-animations */
 @keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }

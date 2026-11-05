@@ -36,6 +36,12 @@ export default function UserForm({ initial, isNew, onSave, onCancel }) {
       body.section = form.section.trim();
     }
     if (isTeacher) body.subject = form.subject.trim();
+    // On create, leave empty optional fields out; on edit, '' clears them on the server.
+    if (isNew) {
+      for (const key of ['gradeLevel', 'section', 'subject']) {
+        if (body[key] === '') delete body[key];
+      }
+    }
     setBusy(true);
     try {
       await onSave(body);

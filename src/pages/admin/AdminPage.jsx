@@ -137,12 +137,12 @@ export default function AdminPage({ user, onUsersChanged }) {
     const shown = users.data.filter(active.test);
     body = (
       <>
-        <div className="admin-filters" role="group" aria-label="Filter users">
+        <div className="filter-chips" role="group" aria-label="Filter users">
           {FILTERS.map((f) => (
             <button
               key={f.key}
               type="button"
-              className={`chip${filter === f.key ? ' mint' : ''}`}
+              className={`chip filter-chip${filter === f.key ? ' on' : ''}`}
               aria-pressed={filter === f.key}
               onClick={() => setFilter(f.key)}
             >
