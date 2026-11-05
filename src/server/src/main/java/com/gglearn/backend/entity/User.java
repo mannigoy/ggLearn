@@ -2,6 +2,7 @@ package com.gglearn.backend.entity;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.annotation.DocumentId;
+import com.google.cloud.firestore.annotation.Exclude;
 
 /** Firestore users/{uid}. The document id is the Firebase Auth uid. */
 public class User {
@@ -14,6 +15,10 @@ public class User {
 	private Timestamp createdAt;
 	private Timestamp roleUpdatedAt;
 	private String roleUpdatedBy;
+	private Boolean disabled;
+	private String gradeLevel;
+	private String section;
+	private String subject;
 
 	public User() {
 		// Firestore needs a no-arg constructor.
@@ -24,6 +29,12 @@ public class User {
 			if (candidate.value().equals(role)) return true;
 		}
 		return false;
+	}
+
+	/** Missing means not disabled. Excluded because the mapper allows one getter per property. */
+	@Exclude
+	public boolean isDisabled() {
+		return Boolean.TRUE.equals(disabled);
 	}
 
 	public String getUid() { return uid; }
@@ -46,4 +57,16 @@ public class User {
 
 	public String getRoleUpdatedBy() { return roleUpdatedBy; }
 	public void setRoleUpdatedBy(String roleUpdatedBy) { this.roleUpdatedBy = roleUpdatedBy; }
+
+	public Boolean getDisabled() { return disabled; }
+	public void setDisabled(Boolean disabled) { this.disabled = disabled; }
+
+	public String getGradeLevel() { return gradeLevel; }
+	public void setGradeLevel(String gradeLevel) { this.gradeLevel = gradeLevel; }
+
+	public String getSection() { return section; }
+	public void setSection(String section) { this.section = section; }
+
+	public String getSubject() { return subject; }
+	public void setSubject(String subject) { this.subject = subject; }
 }

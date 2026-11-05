@@ -90,4 +90,17 @@ class UserServiceTest {
 		verify(users).updateRole("t-1", "teacher", ADMIN.uid());
 		assertThat(updated.getRole()).isEqualTo("teacher");
 	}
+
+	@Test
+	void disabledUserIsForbidden() {
+		User disabled = profile(STUDENT.uid(), "student");
+		disabled.setDisabled(true);
+		when(users.findById(STUDENT.uid())).thenReturn(Optional.of(disabled));
+
+		assertThatThrownBy(() -> service.getProfile(STUDENT))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> {
+					assertThat(e.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+					assertThat(e.getMessage()).isEqualTo("Your account is turned off. Ask your admin.");
+				});
+	}
 }

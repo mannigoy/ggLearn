@@ -12,7 +12,11 @@ public record UserResponse(
 		String role,
 		Instant createdAt,
 		Instant roleUpdatedAt,
-		String roleUpdatedBy) {
+		String roleUpdatedBy,
+		boolean disabled,
+		String gradeLevel,
+		String section,
+		String subject) {
 
 	public static UserResponse from(User user) {
 		return new UserResponse(
@@ -22,7 +26,11 @@ public record UserResponse(
 				user.getRole(),
 				toInstant(user.getCreatedAt()),
 				toInstant(user.getRoleUpdatedAt()),
-				user.getRoleUpdatedBy());
+				user.getRoleUpdatedBy(),
+				user.isDisabled(),
+				user.getGradeLevel(),
+				user.getSection(),
+				user.getSubject());
 	}
 
 	static Instant toInstant(Timestamp timestamp) {

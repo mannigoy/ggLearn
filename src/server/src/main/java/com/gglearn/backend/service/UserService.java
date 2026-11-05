@@ -20,8 +20,10 @@ public class UserService {
 	}
 
 	public User getProfile(AuthUser me) {
-		return users.findById(me.uid())
+		User profile = users.findById(me.uid())
 				.orElseThrow(() -> ApiException.notFound("Your account has no profile yet. Please contact your admin."));
+		if (profile.isDisabled()) throw ApiException.forbidden("Your account is turned off. Ask your admin.");
+		return profile;
 	}
 
 	/** The caller's profile, if their role is one of `allowed`. */

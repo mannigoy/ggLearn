@@ -20,7 +20,7 @@ public class WebConfig {
 	public FilterRegistrationBean<CorsFilter> corsFilter(@Value("${app.cors.allowed-origins}") List<String> origins) {
 		CorsConfiguration cors = new CorsConfiguration();
 		cors.setAllowedOrigins(origins);
-		cors.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+		cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
