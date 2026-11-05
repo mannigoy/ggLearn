@@ -1,6 +1,6 @@
 # GG Learn: progress notes
 
-_Last updated: 5 November 2026_
+_Last updated: 6 November 2026_
 
 ## Where things stand
 
@@ -10,7 +10,8 @@ _Last updated: 5 November 2026_
 | UI redesign | Done for the public site, the auth screen and the signed-in shell. |
 | Firebase connection | **Blocked.** `.env.local` exists but is empty (0 bytes, probably not saved). |
 | Firestore database and rules | Not started. Needs a Firebase CLI login and a choice of region. |
-| Lessons in Firestore | Not started. Lessons are still saved only in the browser (`localStorage`). |
+| Lessons in Firestore | Done. Lessons are read and written through the Spring Boot API. |
+| Web CRUD | Done. Courses, lessons, experiments, quizzes, questions, enrollments, badges and admin user management work in the web app. |
 
 ## 1. Local dev setup
 
@@ -89,4 +90,16 @@ To do, in order:
 5. **Deploy the rules:** `npx firebase-tools deploy --only firestore:rules --project gglearn-af963`.
 6. **Test sign-up** and check that a profile appears under `users/{uid}`.
 7. **Make the first admin:** Firestore → `users` → your account → set `role` to `admin`.
-8. **Open question:** should lessons move from `localStorage` to Firestore? The Spring Boot API in `src/server` already has `/api/lessons`.
+8. **Done:** lessons moved from `localStorage` to Firestore, through `/api/courses/{courseId}/lessons`.
+
+## 4. Still open
+
+| Item | Notes |
+| --- | --- |
+| Quiz taking and scoring | Students can preview a quiz. They can't answer it or get a score yet. |
+| `user_stats` | Not started. |
+| Leaderboard | Not started. |
+| Analytics | Not started. |
+| Mobile | Not started. |
+
+**Not tested against live Firebase yet.** The API and the web app have unit tests, lint and a build. Run the manual test checklist in `docs/superpowers/manual-test.md` before relying on them.
