@@ -9,6 +9,7 @@ import ComingSoon from './pages/app/ComingSoon.jsx'
 import CoursePage from './pages/courses/CoursePage.jsx'
 import CoursesPage from './pages/courses/CoursesPage.jsx'
 import BadgesPage from './pages/badges/BadgesPage.jsx'
+import LessonPage from './pages/lessons/LessonPage.jsx'
 import Overview from './pages/app/Overview.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import ChangePassword from './pages/auth/ChangePassword.jsx'
@@ -59,7 +60,7 @@ export default function App() {
         {page === 'password' && <ChangePassword />}
         {page === 'courses' && <CoursesPage user={user} go={go} />}
         {page === 'course' && <CoursePage user={user} id={view.id} tab={view.tab} go={go} />}
-        {page === 'lesson' && <ComingSoon title="Lesson" onBack={back} />}
+        {page === 'lesson' && <LessonPage user={user} id={view.id} go={go} />}
         {page === 'quiz' && <ComingSoon title="Quiz" onBack={back} />}
         {page === 'badges' && <BadgesPage />}
         {page === 'home' && <Overview user={user} pendingCount={pendingCount} go={go} />}
