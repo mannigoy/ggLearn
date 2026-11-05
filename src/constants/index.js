@@ -3,9 +3,9 @@ export const STORAGE_KEY = 'gglearn-basic';
 export const ALLOW_SELF_REGISTER = true;
 
 export const TOPICS = {
-  life: '🌱 Life Science',
-  earth: '🌍 Earth Science',
-  physical: '🧪 Physical Science'
+  life: 'Life Science',
+  earth: 'Earth Science',
+  physical: 'Physical Science'
 };
 
 export const ROLES = {

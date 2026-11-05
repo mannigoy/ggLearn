@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { ALLOW_SELF_REGISTER } from '../../constants/index.js';
 import Field from '../../components/ui/Field.jsx';
+import { Mascot, Shapes } from '../../components/ui/Paper.jsx';
 
 const ROLES = [
-  ['student', '🎒', 'Student'],
-  ['teacher', '🍎', 'Teacher']
+  ['student', 'Learn and try experiments', 'Student'],
+  ['teacher', 'Build courses for a class', 'Teacher']
 ];
 const TABS = ALLOW_SELF_REGISTER
   ? [['login', 'Log in'], ['register', 'Sign up']]
@@ -57,16 +58,16 @@ export default function Auth({ onLogin, onRegister, initialTab = 'login', onBack
     .join(' ');
 
   return (
-    <div className="auth-shell">
-      {onBack && <button type="button" className="link" onClick={onBack}>← Back to site</button>}
-      <div className="auth-brand"><span aria-hidden="true">🌱</span> GG Learn</div>
-      <div className="hero">
-        <div className="hero-sprout" aria-hidden="true">🌿</div>
-        <h1>Let's grow curious.</h1>
-        <p>A friendly place for big questions and tiny discoveries.</p>
-      </div>
-
-      <div className="card">
+    <div className="auth-page">
+      <Shapes set="hero" />
+      <div>
+      {onBack && <p className="auth-back"><button type="button" className="btn small plain" onClick={onBack}>Back to the site</button></p>}
+      <main className="auth-card">
+        <div className="auth-head">
+          <Mascot size={96} />
+          <h1>{tab === 'login' ? 'Open your notebook' : 'Start your notebook'}</h1>
+          <p>A friendly place for big questions and tiny discoveries.</p>
+        </div>
         <div
           className="tabs"
           role="tablist"
@@ -104,7 +105,7 @@ export default function Auth({ onLogin, onRegister, initialTab = 'login', onBack
                   aria-labelledby="rl"
                   onKeyDown={(e) => rovingKeys(e, ROLES.map(([value]) => value), f.role, (v) => set('role', v), roleRefs)}
                 >
-                  {ROLES.map(([value, emoji, label], i) => (
+                  {ROLES.map(([value, hint, label], i) => (
                     <button
                       key={value}
                       ref={(el) => (roleRefs.current[i] = el)}
@@ -115,7 +116,7 @@ export default function Auth({ onLogin, onRegister, initialTab = 'login', onBack
                       tabIndex={f.role === value ? 0 : -1}
                       onClick={() => set('role', value)}
                     >
-                      <span aria-hidden="true">{emoji}</span>{label}
+                      {label}<small>{hint}</small>
                     </button>
                   ))}
                 </div>
@@ -142,10 +143,11 @@ export default function Auth({ onLogin, onRegister, initialTab = 'login', onBack
             />
           </Field>
 
-          <button type="submit" className="btn green" style={{ width: '100%' }} disabled={busy}>
+          <button type="submit" className="btn ink wide" disabled={busy}>
             {busy ? 'Please wait…' : tab === 'login' ? 'Log in' : 'Create my account'}
           </button>
         </form>
+      </main>
       </div>
     </div>
   );

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# design inspector screenshots and builds
+.taste-skill/
+
+# Firebase service-account keys (never commit)
+serviceAccountKey*.json
+*.pem

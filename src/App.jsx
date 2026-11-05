@@ -25,7 +25,7 @@ export default function App() {
   }
 
   if (authLoading) {
-    return <p className="auth-shell muted" role="status">Loading…</p>
+    return <p className="auth-page" role="status">Opening your notebook…</p>
   }
 
   if (user) {

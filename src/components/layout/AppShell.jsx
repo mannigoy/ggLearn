@@ -1,15 +1,32 @@
+import { ROLES } from '../../constants/index.js';
 import AppHeader from './AppHeader.jsx';
-import Sidebar from './Sidebar.jsx';
 
-export default function AppShell({ user, section, view, go, pendingCount, onNewLesson, onLogout, children }) {
+/** Signed-in frame: the top bar, a centred row of notebook tabs, and one centred column. */
+export default function AppShell({ user, view, go, pendingCount = 0, onNewLesson, onLogout, children }) {
+  const items = [
+    { name: 'home', label: 'My notebook' },
+    user.role === ROLES.ADMIN && { name: 'admin', label: 'Users', badge: pendingCount },
+    { name: 'password', label: 'Password' }
+  ].filter(Boolean);
+
   return (
     <div className="app-shell">
       <a className="skip" href="#main">Skip to main content</a>
-      <AppHeader user={user} section={section} onNewLesson={onNewLesson} onLogout={onLogout} />
-      <div className="app-body">
-        <Sidebar user={user} view={view} go={go} pendingCount={pendingCount} />
-        <main id="main" className="wrap">{children}</main>
-      </div>
+      <AppHeader user={user} onNewLesson={onNewLesson} onLogout={onLogout} />
+      <nav className="shell-nav" aria-label="Notebook">
+        {items.map((item) => (
+          <button
+            key={item.name}
+            type="button"
+            aria-current={view.name === item.name ? 'page' : undefined}
+            onClick={() => go({ name: item.name })}
+          >
+            {item.label}
+            {item.badge > 0 && <span className="chip"><span className="sr-only">, </span>{item.badge}<span className="sr-only"> waiting</span></span>}
+          </button>
+        ))}
+      </nav>
+      <main id="main" className="wrap">{children}</main>
     </div>
   );
 }

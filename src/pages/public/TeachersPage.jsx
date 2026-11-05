@@ -1,284 +1,164 @@
 import { useState } from 'react';
+import Icon, { IconBubble } from '../../components/ui/Icon.jsx';
+import { Shapes } from '../../components/ui/Paper.jsx';
 import TeacherDashboard from './shared/TeacherDashboard.jsx';
-import { ArrowRightIcon, BookIcon, ChartIcon, FlaskIcon, LayersIcon, ShieldCheckIcon, SparklesIcon, UsersIcon } from '../../components/icons/icons.jsx';
-import { QuoteCard, SectionHead, Tick } from './shared/bits.jsx';
 
-/* ==================== 1. TEACHERS HERO ==================== */
-function CourseBuilderPreview() {
-  const blocks = [
-    { kind: 'Lesson', meta: '4 min', Icon: BookIcon, tone: 'tint-leaf' },
-    { kind: 'Experiment', meta: '20 min', Icon: FlaskIcon, tone: 'tint-peach' },
-    { kind: 'Quiz', meta: '5 items', Icon: SparklesIcon, tone: 'tint-lav' }
-  ];
+/* ==================== Hero ==================== */
+const FACTS = [
+  { icon: 'users', tone: 'sky', label: 'Grades', value: 'K–5' },
+  { icon: 'book', tone: 'sun', label: 'Courses', value: '3 to start' },
+  { icon: 'trophy', tone: 'mint', label: 'Pilot', value: '1 free term' }
+];
+
+function TeachersHero({ go }) {
   return (
-    <div className="card notebook">
-      <div className="row">
-        <div>
-          <p className="eyebrow">Course builder</p>
-          <h3>Grade 3 · Living Things</h3>
-        </div>
-        <span className="chip tint-butter">Draft</span>
-      </div>
-      <p><b>Lesson 4: How plants move water</b></p>
-      <ul className="plain-list">
-        {blocks.map(({ kind, meta, Icon, tone }) => (
-          <li key={kind} className="panel media">
-            <span className={`icon-badge small ${tone}`}><Icon size={18} /></span>
-            <span className="grow"><b>{kind}</b><small>{meta}</small></span>
-            <span className="chip">Edit</span>
-          </li>
+    <section id="top" className="hero" aria-labelledby="t-hero-title">
+      <Shapes set="hero" />
+      <IconBubble name="chart" tone="sky" size={44} />
+      <h1 id="t-hero-title">Science class, ready by Monday</h1>
+      <p className="hero-lead">Build a course once, assign it to your class, and watch progress arrive on one screen.</p>
+      <ul className="facts">
+        {FACTS.map((f) => (
+          <li key={f.label}><IconBubble name={f.icon} tone={f.tone} size={26} /><span>{f.label}<b>{f.value}</b></span></li>
         ))}
       </ul>
-      <div className="alert">
-        <ShieldCheckIcon size={20} />
-        <span><b>Safety note (required)</b><br />Water only. No glasses at the table. Wipe the surface afterwards.</span>
-      </div>
-      <ul className="chips">
-        <li className="chip tint-leaf">3-LS1-2</li>
-        <li className="chip tint-leaf">3-5-ETS1-3</li>
-        <li className="chip tint-leaf">Safety reviewed ✓</li>
-      </ul>
       <div className="cta-row">
-        <span className="btn small green">Publish</span>
-        <span className="btn small plain">Assign to 2 classes</span>
-      </div>
-    </div>
-  );
-}
-
-function TeachersHero() {
-  return (
-    <section id="top" className="container mk-hero">
-      <div>
-        <p className="chip tint-butter"><UsersIcon size={14} />For teachers and schools · Grades K–5</p>
-        <h1 className="display">Bring real science to class. Skip the prep work.</h1>
-        <p className="lead">
-          Build a course once (lessons, experiments with safety notes, and quizzes), then assign it to your
-          class and watch progress arrive on one screen. Free pilot for one term.
-        </p>
-        <div className="cta-row">
-          <a className="btn lg" href="#pilot">Book a 20-minute demo <ArrowRightIcon size={18} /></a>
-          <a className="btn lg plain" href="#sample-course">See a sample course</a>
-        </div>
-        <ul className="trust-line">
-          {['No prep to get started', 'Roster import in minutes', 'Cancel any time'].map((t) => <li key={t}><Tick />{t}</li>)}
-        </ul>
-      </div>
-      <CourseBuilderPreview />
-    </section>
-  );
-}
-
-/* ==================== 2. SCHOOLS + STATS ==================== */
-const SCHOOLS = ['Oakridge Elementary', 'Riverbend School', 'Maple Grove K–8', 'Lakeside STEM Academy', 'Fairview Primary'];
-const T_STATS = [
-  { v: '4 hrs', l: 'saved per week on prep' },
-  { v: '320+', l: 'ready-to-use experiments' },
-  { v: '1,200+', l: 'classrooms onboard' },
-  { v: '2 hrs', l: 'live professional development included' }
-];
-
-function SchoolStrip() {
-  return (
-    <section aria-label="Schools using GG Learn" className="section alt tight">
-      <div className="container">
-        <p className="eyebrow center-text">Built with science teachers and used by</p>
-        <ul className="school-list">{SCHOOLS.map((s) => <li key={s}>{s}</li>)}</ul>
-        <dl className="grid g4">
-          {T_STATS.map((s) => (
-            <div key={s.l} className="card stat">
-              <dt className="sr-only">{s.l}</dt>
-              <dd><b>{s.v}</b><span>{s.l}</span></dd>
-            </div>
-          ))}
-        </dl>
+        <a className="btn big" href="#pilot">Start a free pilot</a>
+        <button type="button" className="btn big plain" onClick={() => go('home')}>I’m a parent</button>
       </div>
     </section>
   );
 }
 
-/* ==================== 3. TEACHER VALUE PROPS ==================== */
-const T_PROPS = [
-  { Icon: LayersIcon, tone: 'tint-leaf', title: 'A whole unit in an afternoon', body: 'Start from a template or your own notes. Lessons, experiments, and quizzes snap together in order, with no formatting and no add-ons.' },
-  { Icon: ShieldCheckIcon, tone: 'tint-peach', title: 'Safety is a required field', body: 'Every experiment asks for materials, steps, and a safety note before it can be published. Nothing reaches a kid unfinished.' },
-  { Icon: ChartIcon, tone: 'tint-sky', title: 'Progress you can act on', body: 'Per-student completion, quiz scores, and the exact step where a class got stuck, filterable by lesson.' },
-  { Icon: BookIcon, tone: 'tint-butter', title: 'Standards mapped by default', body: 'Courses carry NGSS codes from the start, so reporting is a click instead of a Friday-night project.' }
-];
-
-function TeacherProps() {
-  return (
-    <section aria-labelledby="t-props" className="section">
-      <div className="container">
-        <SectionHead eyebrow="Why teachers switch" id="t-props" title="Less prep. More science. Fewer missing worksheets." />
-        <ul className="grid g4">
-          {T_PROPS.map(({ Icon, tone, title, body }) => (
-            <li key={title} className="card">
-              <span className={`icon-badge ${tone}`}><Icon /></span>
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/* ==================== 4. HOW IT WORKS ==================== */
-const T_STEPS = [
-  { n: '1', tone: 'tint-sky', title: 'Create a course', body: 'Pick a grade and a unit, or start from scratch. Add lessons, experiments, and quizzes in the order you teach them.' },
-  { n: '2', tone: 'tint-butter', title: 'Add the experiment', body: 'Type the materials, number the steps, and fill in the safety note. Publishing is blocked until all three are done.' },
-  { n: '3', tone: 'tint-leaf', title: 'Assign and watch', body: 'Push it to a class with one click. Completion, scores, and stuck points land on your dashboard as they work.' }
+/* ==================== How a course comes together ==================== */
+const STEPS = [
+  { icon: 'pencil', tone: 'sky', name: 'Plan the unit', time: '25 min', text: 'Pick a grade and a unit, then put lessons in your teaching order.' },
+  { icon: 'flask', tone: 'sun', name: 'Add experiments', time: 'required', text: 'Materials, numbered steps and a safety note. Publishing waits until all three are in.' },
+  { icon: 'users', tone: 'mint', name: 'Assign it', time: '1 click', text: 'Push it to a class. Progress arrives as students work.' }
 ];
 
 function TeacherHowItWorks() {
   return (
-    <section id="how-it-works" aria-labelledby="t-how" className="section alt">
-      <div className="container">
-        <SectionHead eyebrow="How it works" id="t-how" title="Three steps, then you are teaching" />
-        <ol className="grid g3 steps">
-          {T_STEPS.map((s) => (
-            <li key={s.n} className="card">
-              <span className={`step-num ${s.tone}`}>{s.n}</span>
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </li>
-          ))}
-        </ol>
+    <section id="how-it-works" className="section" aria-labelledby="t-how">
+      <div className="section-head" data-reveal>
+        <h2 id="t-how">How a course comes together</h2>
+        <p>One afternoon from blank page to a unit your class can run.</p>
       </div>
+      <ol className="steps">
+        {STEPS.map((s) => (
+          <li key={s.name} className={`step ${s.tone}`} data-reveal>
+            <IconBubble name={s.icon} tone={s.tone} size={30} />
+            <h3>{s.name}</h3>
+            <p>{s.text}</p>
+            <span className="chip"><Icon name="clock" size={18} />{s.time}</span>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }
 
-/* ==================== 5. SAMPLE COURSES ==================== */
+/* ==================== Courses ==================== */
 const COURSES = [
-  { grade: 'Grade 3', name: 'Living Things', units: 5, lessons: 27, topics: ['What living things need', 'Plant parts and jobs', 'Life cycles'] },
-  { grade: 'Grade 4', name: 'Matter and Energy', units: 4, lessons: 22, topics: ['States of matter', 'Light and shadow', 'Simple machines'] },
-  { grade: 'Grade 5', name: 'Earth and Space', units: 5, lessons: 24, topics: ['Water cycle', 'Day and night', 'Renewable energy'] }
+  { icon: 'leaf', tone: 'mint', name: 'Living Things', grade: 'Grade 3', meta: '5 units · 27 lessons', topics: ['What living things need', 'Plant parts and their jobs', 'Life cycles', 'Traits and families', 'Living together'] },
+  { icon: 'bolt', tone: 'coral', name: 'Matter and Energy', grade: 'Grade 4', meta: '4 units · 22 lessons', topics: ['States of matter', 'Light and shadow', 'Simple machines', 'Energy on the move'] },
+  { icon: 'globe', tone: 'sky', name: 'Earth and Space', grade: 'Grade 5', meta: '5 units · 24 lessons', topics: ['The water cycle', 'Day and night', 'Rocks and soil', 'Weather and climate', 'Renewable energy'] }
 ];
 
-function SampleCourse() {
+function Courses() {
   return (
-    <section id="sample-course" aria-labelledby="t-course" className="section">
-      <div className="container split">
-        <div>
-          <p className="eyebrow">Curriculum preview</p>
-          <h2 id="t-course">Fork it, or bring your own</h2>
-          <p className="lead">Every course is a starting point. Duplicate one, change the order, swap an experiment for your own. It is your unit the moment you edit it.</p>
-          <ul className="plain-list">
-            {COURSES.map((c) => (
-              <li key={c.grade} className="card">
-                <div className="chips">
-                  <span className="chip tint-leaf">{c.grade}</span>
-                  <h3 className="inline">{c.name}</h3>
-                  <span className="muted">{c.units} units · {c.lessons} lessons</span>
-                </div>
-                <ul className="chips">{c.topics.map((t) => <li key={t} className="chip">{t}</li>)}</ul>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div id="dashboard">
-          <h3 className="center-text">What Monday morning looks like</h3>
-          <TeacherDashboard />
-        </div>
+    <section id="courses" className="section" aria-labelledby="t-courses">
+      <div className="section-head" data-reveal>
+        <h2 id="t-courses">Courses to start from</h2>
+        <p>Duplicate one and it’s yours: change the order, swap an experiment, add your own quiz.</p>
       </div>
+      <ul className="trio">
+        {COURSES.map((c) => (
+          <li key={c.name} className={`trio-card ${c.tone}`} data-reveal>
+            <IconBubble name={c.icon} tone={c.tone} size={30} />
+            <span className="chip sun">{c.grade}</span>
+            <h3>{c.name}</h3>
+            <p className="muted">{c.meta}</p>
+            <ul className="ticks">{c.topics.map((t) => <li key={t}><Icon name="check" size={20} strokeWidth={3} />{t}</li>)}</ul>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-/* ==================== 6. QUOTES ==================== */
-// Placeholder quotes: swap for real, permissioned testimonials before launch.
-const T_QUOTES = [
-  { quote: 'I built our whole plants unit on a Sunday. By Friday every kid had run an experiment and I had the data already sorted.', name: 'Marcus D.', role: '4th grade teacher, 24 students', initials: 'MD', tone: 'tint-leaf' },
-  { quote: 'The safety notes are written the way I would write them. That is the part I was missing everywhere else.', name: 'Elena R.', role: 'Science lead, K–5', initials: 'ER', tone: 'tint-sun' },
-  { quote: 'Roster import took four minutes. I had the pilot running before the staff meeting ended.', name: 'Tobias N.', role: 'Instructional coach', initials: 'TN', tone: 'tint-sky' }
-];
-
-function TeacherQuotes() {
+/* ==================== Dashboard ==================== */
+function Dashboard() {
   return (
-    <section aria-labelledby="t-quotes" className="section alt">
-      <div className="container">
-        <h2 id="t-quotes" className="center-title">Teachers talk about their Friday afternoons</h2>
-        <ul className="grid g3">{T_QUOTES.map((q) => <QuoteCard key={q.name} q={q} />)}</ul>
+    <section id="dashboard" className="section" aria-labelledby="t-dash">
+      <div className="section-head" data-reveal>
+        <h2 id="t-dash">What Monday morning looks like</h2>
+        <p>Who finished, who is on track, and which step needs a reteach, before the first bell.</p>
       </div>
+      <div className="dash-ui" data-reveal><TeacherDashboard /></div>
     </section>
   );
 }
 
-/* ==================== 7. PILOT ==================== */
-const PILOT = [
-  'One free term for every teacher in the pilot',
-  'Roster import from a spreadsheet or SIS',
-  'Two hours of live professional development',
-  'Standards-mapped progress export',
-  'A real person on support chat'
-];
+/* ==================== Pilot ==================== */
+const PILOT = ['A free term for every teacher', 'Roster import from a spreadsheet', 'Two hours of live training', 'A real person on support'];
 
-function PilotBand() {
+function Pilot() {
   return (
-    <section id="pilot" aria-labelledby="t-pilot" className="section">
-      <div className="container">
-        <div className="cta-band split left">
-          <div>
-            <h2 id="t-pilot" className="display">Run a pilot this term</h2>
-            <p className="lead">Pick one unit and one class, free for the whole term. If it is not saving you time, you delete it and walk away.</p>
-            <div className="cta-row">
-              <a className="btn lg green" href="mailto:schools@gglearn.example?subject=Classroom%20pilot">Start the pilot <ArrowRightIcon size={18} /></a>
-              <a className="btn lg plain" href="#faq">Read the FAQ</a>
-            </div>
-          </div>
-          <ul className="check-list card">{PILOT.map((p) => <li key={p}><Tick />{p}</li>)}</ul>
+    <section id="pilot" className="section" aria-labelledby="t-pilot">
+      <div className="start" data-reveal>
+        <Shapes set="start" />
+        <h2 id="t-pilot">Run a pilot this term</h2>
+        <p>Pick one unit and one class. If it isn’t saving you time, delete it and walk away.</p>
+        <ul className="ticks inline">{PILOT.map((p) => <li key={p}><Icon name="check" size={20} strokeWidth={3} />{p}</li>)}</ul>
+        <div className="cta-row">
+          <a className="btn big ink" href="mailto:schools@gglearn.example?subject=Classroom%20pilot"><Icon name="mail" size={22} />Email us to start</a>
         </div>
       </div>
     </section>
   );
 }
 
-/* ==================== 8. FAQ ==================== */
+/* ==================== FAQ ==================== */
 const FAQ = [
-  { q: 'What do students need to run a lesson?', a: 'One device per pair of students is enough, and a phone works fine for homework. Lessons download ahead of time, so a flaky classroom connection does not stop the class.' },
-  { q: 'What happens to our student data?', a: 'Rosters come from you and stay in your school’s workspace. There are no ads and no student-facing chat. You can export or delete everything at any time.' },
-  { q: 'Can we edit the courses you provide?', a: 'Yes. Duplicate a course and it becomes yours: reorder lessons, swap an experiment, or add your own quiz. The safety note field stays required either way.' },
-  { q: 'How much does it cost after the pilot?', a: 'Per-teacher pricing with a school-wide option. No per-student fee, and no charge for students who use a shared device.' }
+  { q: 'What do students need to run a lesson?', a: 'One device per pair of students is enough, and a phone works for homework. Lessons download ahead of time, so a slow classroom connection does not stop the class.' },
+  { q: 'What happens to our student data?', a: 'Rosters come from you and stay in your school’s workspace. There are no ads and no student chat. You can export or delete everything at any time.' },
+  { q: 'Can we edit the courses you provide?', a: 'Yes. Duplicate a course and it becomes yours: reorder lessons, swap an experiment, or add your own quiz. The safety note stays required either way.' },
+  { q: 'How much does it cost after the pilot?', a: 'Per-teacher pricing with a school-wide option. No per-student fee, and no charge for students who share a device.' }
 ];
 
 function Faq() {
   const [open, setOpen] = useState(0);
   return (
-    <section id="faq" aria-labelledby="t-faq" className="section">
-      <div className="container narrow">
-        <h2 id="t-faq" className="center-title">Questions teachers actually ask</h2>
-        <ul className="plain-list">
-          {FAQ.map((item, i) => {
-            const on = open === i;
-            return (
-              <li key={item.q} className="card faq">
-                <h3>
-                  <button type="button" className="faq-q" aria-expanded={on} aria-controls={`faq-panel-${i}`} onClick={() => setOpen(on ? -1 : i)}>
-                    {item.q}<span aria-hidden="true">{on ? '−' : '+'}</span>
-                  </button>
-                </h3>
-                <div id={`faq-panel-${i}`} hidden={!on}><p>{item.a}</p></div>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+    <section id="faq" className="section" aria-labelledby="t-faq">
+      <div className="section-head" data-reveal><h2 id="t-faq">Questions teachers ask</h2></div>
+      <ul className="faq-list">
+        {FAQ.map((item, i) => {
+          const on = open === i;
+          return (
+            <li key={item.q}>
+              <h3>
+                <button type="button" className="faq-q" aria-expanded={on} aria-controls={`faq-panel-${i}`} onClick={() => setOpen(on ? -1 : i)}>
+                  {item.q}<span className="faq-plus" aria-hidden="true">+</span>
+                </button>
+              </h3>
+              <div id={`faq-panel-${i}`} hidden={!on}><p>{item.a}</p></div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
 
-export default function TeacherPage() {
+export default function TeachersPage({ go }) {
   return (
     <>
-      <TeachersHero />
-      <SchoolStrip />
-      <TeacherProps />
+      <TeachersHero go={go} />
       <TeacherHowItWorks />
-      <SampleCourse />
-      <TeacherQuotes />
-      <PilotBand />
+      <Courses />
+      <Dashboard />
+      <Pilot />
       <Faq />
     </>
   );

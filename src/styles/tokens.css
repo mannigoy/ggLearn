@@ -1,16 +1,39 @@
+/* GG Learn tokens: soft off-white, four cheerful colours, big round shapes, bouncy motion. */
 :root {
-  --ink: #12372A;
-  --ink-muted: #5E7A6B;
-  --paper: #F1F8F1;
-  --grid-line: #DCEBDD;
-  --surface: #FFFFFF;
-  --leaf: #5BAE5B;
-  --leaf-soft: #CFEFCF;
-  --sun: #FFD23F;
-  --coral: #F0805A;
-  --sky: #DCEFFB;
-  --peach: #FFE3D3;
-  --butter: #FFF4C2;
-  --lavender: #E6E3FA;
-  --error: #C2432F;
+  /* colour */
+  --bg: #FFFAF3;              /* soft off-white page */
+  --card: #FFFFFF;
+  --ink: #1D2B4F;             /* text: deep navy, high contrast on every tint */
+  --ink-soft: #4A5878;
+  --line: #E9E2D6;            /* form field edges only */
+
+  --sky: #3BA4F5;   --sky-soft: #DCEFFF;   --sky-deep: #1F7FCC;
+  --sun: #FFC83D;   --sun-soft: #FFF1C9;   --sun-deep: #E0A400;
+  --mint: #2FC69A;  --mint-soft: #D5F6EA;  --mint-deep: #1E9C77;
+  --coral: #FF7466; --coral-soft: #FFE2DE; --coral-deep: #E2554A;
+  --error: #C23B2E;
+
+  /* type */
+  --font-head: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --step-small: 1rem;                                  /* 16px */
+  --step-body: 1.1875rem;                              /* 19px */
+  --step-lead: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --step-head: clamp(2rem, 1.5rem + 2vw, 3rem);
+  --step-display: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem);
+
+  /* shape and space */
+  --r-lg: 36px;
+  --r: 26px;
+  --r-sm: 18px;
+  --pill: 999px;
+  --margin: clamp(16px, 4vw, 40px);
+  --section: clamp(72px, 9vw, 128px);
+  --tap: 52px;
+
+  /* motion */
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-press: 120ms;
+  --t-ui: 260ms;
 }
