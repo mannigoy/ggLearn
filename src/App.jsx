@@ -5,11 +5,11 @@ import useNav from './hooks/useNav.js'
 import useStore from './hooks/useStore.js'
 import useUsers from './hooks/useUsers.js'
 import AdminPage from './pages/admin/AdminPage.jsx'
-import ComingSoon from './pages/app/ComingSoon.jsx'
 import CoursePage from './pages/courses/CoursePage.jsx'
 import CoursesPage from './pages/courses/CoursesPage.jsx'
 import BadgesPage from './pages/badges/BadgesPage.jsx'
 import LessonPage from './pages/lessons/LessonPage.jsx'
+import QuizPage from './pages/quizzes/QuizPage.jsx'
 import Overview from './pages/app/Overview.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import ChangePassword from './pages/auth/ChangePassword.jsx'
@@ -46,7 +46,6 @@ export default function App() {
     const page = (view.name === 'admin' && !isAdmin) || (view.name === 'badges' && user.role !== ROLES.STUDENT)
       ? 'home'
       : view.name
-    const back = () => go({ name: 'courses' })
     return (
       <AppShell
         user={user}
@@ -61,7 +60,7 @@ export default function App() {
         {page === 'courses' && <CoursesPage user={user} go={go} />}
         {page === 'course' && <CoursePage user={user} id={view.id} tab={view.tab} go={go} />}
         {page === 'lesson' && <LessonPage user={user} id={view.id} go={go} />}
-        {page === 'quiz' && <ComingSoon title="Quiz" onBack={back} />}
+        {page === 'quiz' && <QuizPage user={user} id={view.id} go={go} />}
         {page === 'badges' && <BadgesPage />}
         {page === 'home' && <Overview user={user} pendingCount={pendingCount} go={go} />}
       </AppShell>
