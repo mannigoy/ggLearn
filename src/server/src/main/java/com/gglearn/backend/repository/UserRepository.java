@@ -7,6 +7,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,5 +61,21 @@ public class UserRepository {
 				"role", role,
 				"roleUpdatedAt", FieldValue.serverTimestamp(),
 				"roleUpdatedBy", adminUid)));
+	}
+
+	/** An admin-created profile. Fails if it already exists. */
+	public void createProfile(String uid, Map<String, Object> fields) {
+		Map<String, Object> data = new HashMap<>(fields);
+		data.put("createdAt", FieldValue.serverTimestamp());
+		await(users.document(uid).create(data));
+	}
+
+	/** FieldValue.delete() values remove a field. */
+	public void update(String uid, Map<String, Object> fields) {
+		await(users.document(uid).update(fields));
+	}
+
+	public void deleteById(String uid) {
+		await(users.document(uid).delete());
 	}
 }
