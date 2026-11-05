@@ -125,3 +125,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--sky); outline: n
 @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* tabs, courses, list editor */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.tabs [role="tab"] { min-height: 48px; padding: 8px 22px; background: var(--sky-soft); border: 0; border-radius: var(--pill); font-family: var(--font-head); font-size: var(--step-body); font-weight: 600; cursor: pointer; }
+.tabs [role="tab"][aria-selected="true"] { background: var(--sky); color: #fff; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.page-head h1 { margin: 0; }
+.overview-cta { margin: 0 0 24px; text-align: center; }
+.course-card .course-open { display: grid; gap: 4px; justify-items: start; min-height: 48px; padding: 0; background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.empty { padding: 12px 0; text-align: center; }
+.empty h3 { margin-bottom: 6px; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.list-editor { margin: 0 0 20px; padding: 0; border: 0; }
+.list-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.list-row input { flex: 1 1 220px; width: auto; }

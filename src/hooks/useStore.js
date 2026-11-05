@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ALLOW_SELF_REGISTER, ROLES } from '../constants/index.js';
+import { ALLOW_SELF_REGISTER } from '../constants/index.js';
 import {
   loginUser,
   logoutUser,
@@ -7,13 +7,10 @@ import {
   registerUser,
   watchAuth
 } from '../services/authService.js';
-import { loadDb, saveDb } from '../services/db.js';
-import { uid } from '../utils/id.js';
 
 const PROFILE_TIMEOUT_MS = 8000;
 
 export default function useStore() {
-  const [db, setDb] = useState(loadDb);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const profileWaitRef = useRef(null);
@@ -29,8 +26,6 @@ export default function useStore() {
     });
     return unsubscribe;
   }, []);
-
-  useEffect(() => { saveDb(db); }, [db]);
 
   const login = async (email, password) => {
     // Wait for the profile before signing in, so a profile event that arrives
@@ -98,25 +93,5 @@ export default function useStore() {
     await logoutUser();
   };
 
-  const canAuthor = user?.role === ROLES.TEACHER || user?.role === ROLES.ADMIN;
-
-  const deleteLesson = (id) => {
-    if (!canAuthor) return;
-    setDb((current) => ({
-      ...current,
-      lessons: current.lessons.filter(
-        (item) => item.id !== id || (item.byUid !== user.uid && user.role !== ROLES.ADMIN)
-      )
-    }));
-  };
-
-  const addLesson = (lesson) => {
-    if (!canAuthor) return;
-    setDb((current) => ({
-      ...current,
-      lessons: [...current.lessons, { ...lesson, id: uid(), by: user.name, byUid: user.uid }]
-    }));
-  };
-
-  return { db, user, authLoading, login, register, logout, addLesson, deleteLesson };
+  return { user, authLoading, login, register, logout };
 }

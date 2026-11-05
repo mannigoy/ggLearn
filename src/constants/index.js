@@ -1,6 +1,7 @@
-export const STORAGE_KEY = 'gglearn-basic';
 // Set to false when the school switches to admin-created accounts.
 export const ALLOW_SELF_REGISTER = true;
+
+export const GRADES = ['K', '1', '2', '3', '4', '5', '6'];
 
 export const TOPICS = {
   life: 'Life Science',

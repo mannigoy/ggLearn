@@ -1,15 +1,19 @@
+import { useEffect } from 'react'
 import AppShell from './components/layout/AppShell.jsx'
 import { ROLES } from './constants/index.js'
 import useNav from './hooks/useNav.js'
 import useStore from './hooks/useStore.js'
 import useUsers from './hooks/useUsers.js'
 import AdminPage from './pages/admin/AdminPage.jsx'
+import ComingSoon from './pages/app/ComingSoon.jsx'
+import CoursesPage from './pages/courses/CoursesPage.jsx'
 import Overview from './pages/app/Overview.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import ChangePassword from './pages/auth/ChangePassword.jsx'
 import Site from './pages/public/Site.jsx'
+import { setUnauthorizedHandler } from './services/api.js'
 
-const SECTIONS = { home: 'Overview', admin: 'Users', password: 'Account' }
+const SECTIONS = { home: 'Overview', courses: 'Courses', course: 'Courses', lesson: 'Courses', quiz: 'Courses', badges: 'Badges', admin: 'Users', password: 'Account' }
 
 export default function App() {
   const { user, authLoading, login, register, logout } = useStore()
@@ -24,13 +28,22 @@ export default function App() {
     go({ name: 'home' })
   }
 
+  // A 401 from the API means the session is no longer valid: sign out.
+  useEffect(() => {
+    setUnauthorizedHandler(() => { handleLogout().catch(() => {}) })
+    return () => setUnauthorizedHandler(null)
+  })
+
   if (authLoading) {
     return <p className="auth-page" role="status">Opening your notebook…</p>
   }
 
   if (user) {
     // Fall back to the overview if the current view isn't allowed for this role.
-    const page = view.name === 'admin' && !isAdmin ? 'home' : view.name
+    const page = (view.name === 'admin' && !isAdmin) || (view.name === 'badges' && user.role !== ROLES.STUDENT)
+      ? 'home'
+      : view.name
+    const back = () => go({ name: 'courses' })
     return (
       <AppShell
         user={user}
@@ -42,7 +55,12 @@ export default function App() {
       >
         {page === 'admin' && <AdminPage user={user} users={users} loadError={usersError} />}
         {page === 'password' && <ChangePassword />}
-        {page !== 'admin' && page !== 'password' && <Overview user={user} pendingCount={pendingCount} go={go} />}
+        {page === 'courses' && <CoursesPage user={user} go={go} />}
+        {page === 'course' && <ComingSoon title="Course" onBack={back} />}
+        {page === 'lesson' && <ComingSoon title="Lesson" onBack={back} />}
+        {page === 'quiz' && <ComingSoon title="Quiz" onBack={back} />}
+        {page === 'badges' && <ComingSoon title="Badges" onBack={() => go({ name: 'home' })} />}
+        {page === 'home' && <Overview user={user} pendingCount={pendingCount} go={go} />}
       </AppShell>
     )
   }

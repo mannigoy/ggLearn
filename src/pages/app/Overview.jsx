@@ -35,6 +35,10 @@ export default function Overview({ user, pendingCount, go }) {
         </div>
       )}
 
+      <p className="overview-cta">
+        <button type="button" className="btn big" onClick={() => go({ name: 'courses' })}>Go to my courses</button>
+      </p>
+
       <section className="card overview-progress" aria-labelledby="ov-progress">
         <h2 id="ov-progress">Your progress</h2>
         <p>
