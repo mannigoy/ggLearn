@@ -37,6 +37,11 @@ public class UserRepository {
 				.toObjects(User.class);
 	}
 
+	/** Unsorted: ordering needs a composite index, so callers sort in Java. */
+	public List<User> findByRole(String role) {
+		return await(users.whereEqualTo("role", role).get()).toObjects(User.class);
+	}
+
 	/** Fails if the profile already exists. */
 	public void create(String uid, String name, String email, String role) {
 		await(users.document(uid).create(Map.of(
