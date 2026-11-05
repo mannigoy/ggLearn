@@ -3,6 +3,7 @@ package com.gglearn.backend.service;
 import com.gglearn.backend.dto.AuthUser;
 import com.gglearn.backend.entity.Enrollment;
 import com.gglearn.backend.entity.User;
+import com.gglearn.backend.exception.ApiException;
 import com.gglearn.backend.repository.CourseRepository;
 import com.gglearn.backend.repository.EnrollmentRepository;
 import com.gglearn.backend.repository.UserRepository;
@@ -18,6 +19,8 @@ import static com.gglearn.backend.service.Fixtures.assertStatus;
 import static com.gglearn.backend.service.Fixtures.course;
 import static com.gglearn.backend.service.Fixtures.user;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -54,11 +57,16 @@ class EnrollmentServiceTest {
 		return enrollment;
 	}
 
+	private String storedId;
+
+	/** The fields passed to the one createWithId call; also records the id used. */
 	@SuppressWarnings("unchecked")
 	private Map<String, Object> storedFields() {
-		ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
-		verify(enrollments).createWithId(anyString(), captor.capture());
-		return captor.getValue();
+		ArgumentCaptor<String> id = ArgumentCaptor.forClass(String.class);
+		ArgumentCaptor<Map<String, Object>> fields = ArgumentCaptor.forClass(Map.class);
+		verify(enrollments).createWithId(id.capture(), fields.capture());
+		storedId = id.getValue();
+		return fields.getValue();
 	}
 
 	@Test
@@ -71,8 +79,8 @@ class EnrollmentServiceTest {
 		Enrollment result = service.enroll(STUDENT, "c-1", null);
 
 		assertThat(result.getStudentUid()).isEqualTo("s-1");
-		verify(enrollments).createWithId(org.mockito.ArgumentMatchers.eq("c-1_s-1"), anyMap());
 		Map<String, Object> fields = storedFields();
+		assertThat(storedId).isEqualTo("c-1_s-1");
 		assertThat(fields).containsEntry("courseId", "c-1").containsEntry("studentUid", "s-1")
 				.containsEntry("studentName", "Name s-1").containsEntry("progressPct", 0L).containsEntry("points", 0L)
 				.containsKey("enrolledAt");
@@ -185,5 +193,115 @@ class EnrollmentServiceTest {
 
 		assertStatus(HttpStatus.FORBIDDEN, () -> service.students(STUDENT));
 		verify(users, never()).findByRole(anyString());
+	}
+
+	@Test
+	void ownerRosterIsSortedByStudentName() {
+		signIn(TEACHER, "teacher");
+		courseOwnedByT1();
+		when(enrollments.findWhere("courseId", "c-1")).thenReturn(List.of(
+				enrollment("c-1", "s-1", "Zed"), enrollment("c-1", "s-2", "Amy"), enrollment("c-1", "s-3", "Mia")));
+
+		assertThat(service.roster(TEACHER, "c-1")).extracting(Enrollment::getStudentName)
+				.containsExactly("Amy", "Mia", "Zed");
+	}
+
+	@Test
+	void adminCanSeeRoster() {
+		AuthUser admin = new AuthUser("a-1", "a1@example.com");
+		signIn(admin, "admin");
+		courseOwnedByT1();
+		when(enrollments.findWhere("courseId", "c-1")).thenReturn(List.of(enrollment("c-1", "s-1", "Zed")));
+
+		assertThat(service.roster(admin, "c-1")).hasSize(1);
+	}
+
+	@Test
+	void studentCannotSeeRoster() {
+		signIn(STUDENT, "student");
+		courseOwnedByT1();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.roster(STUDENT, "c-1"));
+		verify(enrollments, never()).findWhere(anyString(), any());
+	}
+
+	@Test
+	void otherTeacherCannotSeeRoster() {
+		signIn(OTHER_TEACHER, "teacher");
+		courseOwnedByT1();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.roster(OTHER_TEACHER, "c-1"));
+		verify(enrollments, never()).findWhere(anyString(), any());
+	}
+
+	@Test
+	void ownerRemovesAnotherStudent() {
+		signIn(TEACHER, "teacher");
+		courseOwnedByT1();
+		when(enrollments.exists("c-1", "s-1")).thenReturn(true);
+
+		service.remove(TEACHER, "c-1", "s-1");
+
+		verify(enrollments).deleteById("c-1_s-1");
+	}
+
+	@Test
+	void adminRemovesAnotherStudent() {
+		AuthUser admin = new AuthUser("a-1", "a1@example.com");
+		signIn(admin, "admin");
+		courseOwnedByT1();
+		when(enrollments.exists("c-1", "s-1")).thenReturn(true);
+
+		service.remove(admin, "c-1", "s-1");
+
+		verify(enrollments).deleteById("c-1_s-1");
+	}
+
+	@Test
+	void removingMissingEnrollmentIs404() {
+		signIn(STUDENT, "student");
+		courseOwnedByT1();
+		when(enrollments.exists("c-1", "s-1")).thenReturn(false);
+
+		assertThatThrownBy(() -> service.remove(STUDENT, "c-1", "s-1"))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> {
+					assertThat(e.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+					assertThat(e.getMessage()).isEqualTo("That student isn’t in this course.");
+				});
+		verify(enrollments, never()).deleteById(anyString());
+	}
+
+	@Test
+	void mineReturnsOnlyTheCallersEnrollments() {
+		signIn(STUDENT, "student");
+		Enrollment mine = enrollment("c-1", "s-1", "Name s-1");
+		when(enrollments.findWhere("studentUid", "s-1")).thenReturn(List.of(mine));
+
+		assertThat(service.mine(STUDENT)).containsExactly(mine);
+		verify(enrollments).findWhere("studentUid", "s-1");
+		verify(enrollments, never()).findAll();
+	}
+
+	@Test
+	void enrollInMissingCourseIs404() {
+		signIn(STUDENT, "student");
+		when(courses.findById("c-9")).thenReturn(Optional.empty());
+
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.enroll(STUDENT, "c-9", null));
+		verify(enrollments, never()).createWithId(anyString(), anyMap());
+	}
+
+	@Test
+	void teacherAddingUnknownStudentIs400() {
+		signIn(TEACHER, "teacher");
+		courseOwnedByT1();
+		when(users.findById("ghost")).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> service.enroll(TEACHER, "c-1", "ghost"))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> {
+					assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+					assertThat(e.getMessage()).isEqualTo("Pick a student account.");
+				});
+		verify(enrollments, never()).createWithId(anyString(), anyMap());
 	}
 }
