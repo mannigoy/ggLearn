@@ -63,7 +63,7 @@ export default function QuestionForm({ initial, onSave, onCancel }) {
         <legend className="lab">Correct answer</legend>
         {options.length === 0 && <p>Add choices to pick the correct answer.</p>}
         {options.map((text, i) => (
-          <label key={i} className="list-row">
+          <label key={i} className="choice-option">
             <input
               type="radio"
               name="question-correct"
