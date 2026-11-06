@@ -67,7 +67,7 @@ describe.each([
 
   ['getMe', () => profile.getMe(), ['/me']],
   ['registerMe', () => profile.registerMe(body), ['/me', { method: 'POST', body }]],
-  ['renameMe', () => profile.renameMe(body), ['/me', { method: 'PUT', body }]]
+  ['renameMe', () => profile.renameMe(body), ['/me', { method: 'PATCH', body }]]
 ])('%s', (_name, call, expected) => {
   it('calls apiFetch with the exact path and options', async () => {
     await expect(call()).resolves.toBe('ok');
