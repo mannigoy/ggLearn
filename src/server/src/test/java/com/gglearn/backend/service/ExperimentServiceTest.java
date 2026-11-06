@@ -93,4 +93,14 @@ class ExperimentServiceTest {
 
 		assertStatus(HttpStatus.NOT_FOUND, () -> service.delete(TEACHER, "nope"));
 	}
+
+	@Test
+	void createRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+
+		assertStatus(HttpStatus.BAD_REQUEST,
+				() -> service.create(TEACHER, "l-1", new ExperimentRequest(" a ", List.of("cup"), List.of("Fill it."), null)));
+
+		verify(experiments, never()).create(anyMap());
+	}
 }

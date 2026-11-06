@@ -148,4 +148,17 @@ class QuizServiceTest {
 		lesson.setCourseId(courseId);
 		return lesson;
 	}
+
+	@Test
+	void createRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+		Lesson lesson = new Lesson();
+		lesson.setId("l-1");
+		lesson.setCourseId("c-1");
+		when(lessons.findById("l-1")).thenReturn(Optional.of(lesson));
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.create(TEACHER, "l-1", new QuizRequest(" a ", 1L)));
+
+		verify(quizzes, never()).create(anyMap());
+	}
 }

@@ -69,7 +69,7 @@ public class CourseService {
 		if (caller.hasRole(Role.ADMIN) && hasText(body.teacherUid())) owner = requireTeacher(body.teacherUid());
 
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("gradeLevel", body.gradeLevel());
 		fields.put("topic", body.topic());
 		fields.put("teacherUid", owner.getUid());
@@ -83,7 +83,7 @@ public class CourseService {
 		Course course = access.requireStaff(caller, id);
 
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("gradeLevel", body.gradeLevel());
 		fields.put("topic", body.topic());
 		if (caller.hasRole(Role.ADMIN) && hasText(body.teacherUid()) && !body.teacherUid().equals(course.getTeacherUid())) {

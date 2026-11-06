@@ -284,4 +284,27 @@ class BadgeServiceTest {
 		assertStatus(HttpStatus.FORBIDDEN, () -> service.revoke(STUDENT, "b-1"));
 		verify(badges, never()).deleteById(anyString());
 	}
+
+	@Test
+	void awardRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+		signIn(STUDENT, "student");
+		courseOwnedByT1();
+		when(enrollments.exists("c-1", "s-1")).thenReturn(true);
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.award(TEACHER, new BadgeRequest("c-1", "s-1", " a ")));
+
+		verify(badges, never()).create(anyMap());
+	}
+
+	@Test
+	void renameRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+		courseOwnedByT1();
+		badgeExists();
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.rename(TEACHER, "b-1", new BadgeUpdateRequest(" a ")));
+
+		verify(badges, never()).update(anyString(), anyMap());
+	}
 }

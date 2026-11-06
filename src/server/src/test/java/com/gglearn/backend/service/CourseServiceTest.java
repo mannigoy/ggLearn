@@ -239,4 +239,23 @@ class CourseServiceTest {
 		assertThat(service.list(STUDENT, false)).hasSize(1);
 		verify(courses, never()).findWhere(any(), any());
 	}
+
+	@Test
+	void createRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.create(TEACHER, request(" a ", null)));
+
+		verify(courses, never()).create(anyMap());
+	}
+
+	@Test
+	void updateRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+		when(courses.findById("c-1")).thenReturn(Optional.of(course("c-1", "t-1")));
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.update(TEACHER, "c-1", request("  x  ", null)));
+
+		verify(courses, never()).update(anyString(), anyMap());
+	}
 }

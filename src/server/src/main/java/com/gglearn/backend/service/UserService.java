@@ -43,14 +43,14 @@ public class UserService {
 		if (me.email() == null) throw ApiException.badRequest("Your account has no email address.");
 		if (users.existsById(me.uid())) throw ApiException.conflict("You already have a profile.");
 
-		users.create(me.uid(), name.trim(), me.email().toLowerCase(), stored.value());
+		users.create(me.uid(), Validation.name(name), me.email().toLowerCase(), stored.value());
 		return getProfile(me);
 	}
 
 	/** You may rename yourself; you can never change your own role or email. */
 	public User rename(AuthUser me, String name) {
 		getProfile(me);
-		users.updateName(me.uid(), name.trim());
+		users.updateName(me.uid(), Validation.name(name));
 		return getProfile(me);
 	}
 

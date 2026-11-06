@@ -63,7 +63,7 @@ public class LessonService {
 		long order = body.order() != null ? body.order() : lessons.findWhere("courseId", courseId).size();
 		Map<String, Object> fields = new HashMap<>();
 		fields.put("courseId", courseId);
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("topic", body.topic());
 		fields.put("content", body.content().trim());
 		fields.put("order", order);
@@ -76,7 +76,7 @@ public class LessonService {
 		access.requireStaff(caller, lesson.getCourseId());
 
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("topic", body.topic());
 		fields.put("content", body.content().trim());
 		if (body.order() != null) fields.put("order", body.order());

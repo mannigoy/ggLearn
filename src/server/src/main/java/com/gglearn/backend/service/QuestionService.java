@@ -97,7 +97,7 @@ public class QuestionService {
 		if (!choices.contains(answer)) throw ApiException.badRequest("The correct answer must be one of the choices.");
 
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("questionText", body.questionText().trim());
+		fields.put("questionText", Validation.requireLength(body.questionText().trim(), 2, 500, Validation.QUESTION_MESSAGE));
 		fields.put("choices", choices);
 		fields.put("correctAnswer", answer);
 		return fields;

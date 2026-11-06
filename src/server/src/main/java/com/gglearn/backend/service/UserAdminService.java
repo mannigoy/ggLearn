@@ -33,7 +33,7 @@ public class UserAdminService {
 
 	public User create(AuthUser me, CreateUserRequest body) {
 		userService.requireRole(me, Role.ADMIN);
-		String name = body.name().trim();
+		String name = Validation.name(body.name());
 		String email = body.email().trim().toLowerCase();
 
 		String uid = accounts.createAccount(email, body.password(), name);
@@ -62,7 +62,7 @@ public class UserAdminService {
 		User target = find(uid);
 
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("name", body.name().trim());
+		fields.put("name", Validation.name(body.name()));
 		if (isStudent(target.getRole())) {
 			putOrClear(fields, "gradeLevel", body.gradeLevel());
 			putOrClear(fields, "section", body.section());

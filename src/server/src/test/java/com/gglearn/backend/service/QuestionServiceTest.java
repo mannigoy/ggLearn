@@ -131,4 +131,13 @@ class QuestionServiceTest {
 				.containsEntry("choices", List.of("2", "3")).containsEntry("correctAnswer", "2")
 				.containsEntry("order", 2L).containsEntry("quizId", "z-1").containsEntry("courseId", "c-1");
 	}
+
+	@Test
+	void createRejectsQuestionTextTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+
+		assertThatThrownBy(() -> service.create(TEACHER, "z-1", new QuestionRequest(" a ", List.of("Yes", "No"), "Yes", null)))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+		verify(questions, never()).create(anyMap());
+	}
 }

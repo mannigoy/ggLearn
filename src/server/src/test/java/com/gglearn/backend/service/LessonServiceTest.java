@@ -152,4 +152,15 @@ class LessonServiceTest {
 
 		assertStatus(HttpStatus.NOT_FOUND, () -> service.get(TEACHER, "nope"));
 	}
+
+	@Test
+	void createRejectsTitleTooShortAfterTrim() {
+		signIn(TEACHER, "teacher");
+		when(courses.findById("c-1")).thenReturn(Optional.of(course("c-1", "t-1")));
+
+		assertStatus(HttpStatus.BAD_REQUEST,
+				() -> service.create(TEACHER, "c-1", new LessonRequest(" a ", "life", "Plants grow.", null)));
+
+		verify(lessons, never()).create(anyMap());
+	}
 }

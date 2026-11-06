@@ -61,7 +61,7 @@ public class BadgeService {
 		fields.put("courseId", body.courseId());
 		fields.put("userUid", student.getUid());
 		fields.put("userName", student.getName());
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("dateEarned", FieldValue.serverTimestamp());
 		fields.put("awardedBy", caller.getUid());
 		return requireBadge(badges.create(fields));
@@ -72,7 +72,7 @@ public class BadgeService {
 		Badge badge = requireBadge(id);
 		access.requireStaff(caller, badge.getCourseId());
 
-		badges.update(id, Map.of("title", body.title().trim()));
+		badges.update(id, Map.of("title", Validation.title(body.title())));
 		return requireBadge(id);
 	}
 

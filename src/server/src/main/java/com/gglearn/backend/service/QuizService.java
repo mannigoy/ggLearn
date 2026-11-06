@@ -63,7 +63,7 @@ public class QuizService {
 		Map<String, Object> fields = new HashMap<>();
 		fields.put("courseId", lesson.getCourseId());
 		fields.put("lessonId", lessonId);
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("passingScore", body.passingScore());
 		return toResponse(requireQuiz(quizzes.create(fields)));
 	}
@@ -78,7 +78,7 @@ public class QuizService {
 			throw ApiException.badRequest("The passing score can’t be more than the number of questions (" + totalPoints + ").");
 		}
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("passingScore", body.passingScore());
 		quizzes.update(id, fields);
 		return toResponse(requireQuiz(id));

@@ -73,7 +73,7 @@ public class ExperimentService {
 
 	private static Map<String, Object> fieldsOf(ExperimentRequest body) {
 		Map<String, Object> fields = new HashMap<>();
-		fields.put("title", body.title().trim());
+		fields.put("title", Validation.title(body.title()));
 		fields.put("materials", body.materials().stream().map(String::trim).toList());
 		fields.put("steps", body.steps().stream().map(String::trim).toList());
 		fields.put("safetyNotes", body.safetyNotes() == null ? "" : body.safetyNotes().trim());

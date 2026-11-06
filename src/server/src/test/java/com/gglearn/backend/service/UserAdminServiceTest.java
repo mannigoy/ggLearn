@@ -191,4 +191,24 @@ class UserAdminServiceTest {
 		verify(users).deleteById("s-2");
 		verifyNoInteractions(courses);
 	}
+
+	@Test
+	void createRejectsNameTooShortAfterTrim() {
+		signIn(ADMIN, "admin");
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.create(ADMIN,
+				new CreateUserRequest(" a ", "sam@example.com", "secret1", "student", null, null, null)));
+
+		verifyNoInteractions(accounts);
+	}
+
+	@Test
+	void updateRejectsNameTooShortAfterTrim() {
+		signIn(ADMIN, "admin");
+		when(users.findById("s-2")).thenReturn(Optional.of(user("s-2", "student")));
+
+		assertStatus(HttpStatus.BAD_REQUEST, () -> service.update(ADMIN, "s-2", new UpdateUserRequest(" a ", null, null, null)));
+
+		verify(users, never()).update(anyString(), anyMap());
+	}
 }

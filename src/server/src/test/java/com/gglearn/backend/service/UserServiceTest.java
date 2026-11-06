@@ -103,4 +103,22 @@ class UserServiceTest {
 					assertThat(e.getMessage()).isEqualTo("Your account is turned off. Ask your admin.");
 				});
 	}
+
+	@Test
+	void registerRejectsNameTooShortAfterTrim() {
+		when(users.existsById("new-1")).thenReturn(false);
+
+		assertThatThrownBy(() -> service.register(new AuthUser("new-1", "new@example.com"), " a ", "student"))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+		verify(users, never()).create(anyString(), anyString(), anyString(), anyString());
+	}
+
+	@Test
+	void renameRejectsNameTooShortAfterTrim() {
+		when(users.findById(STUDENT.uid())).thenReturn(Optional.of(profile(STUDENT.uid(), "student")));
+
+		assertThatThrownBy(() -> service.rename(STUDENT, " a "))
+				.isInstanceOfSatisfying(ApiException.class, (e) -> assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
+		verify(users, never()).updateName(anyString(), anyString());
+	}
 }
