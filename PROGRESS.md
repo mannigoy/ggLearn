@@ -11,7 +11,7 @@ _Last updated: 6 November 2026_
 | Firebase connection | **Blocked.** `.env.local` exists but is empty (0 bytes, probably not saved). |
 | Firestore database and rules | Not started. Needs a Firebase CLI login and a choice of region. |
 | Lessons in Firestore | Done. Lessons are read and written through the Spring Boot API. |
-| Web CRUD | Done. Courses, lessons, experiments, quizzes, questions, enrollments, badges and admin user management work in the web app. |
+| Web CRUD | Built and unit-tested; not yet tested against live Firebase. |
 
 ## 1. Local dev setup
 

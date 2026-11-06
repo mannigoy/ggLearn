@@ -53,7 +53,7 @@ Run this against a live Firebase project, with the API and the web app both runn
 3. Click **Edit** on a student, change the grade, and click **Save user**.
    - Expected: the change shows on that student's row.
 4. Click **Turn off** on the student, then click **Yes**. Log out and try to log in as that student.
-   - Expected: the button now reads **Turn on**. The login does not succeed, and the form shows "Something went wrong. Please try again."
+   - Expected: the button now reads **Turn on**. The login does not succeed, and the form shows "Your account is turned off. Ask your admin."
 5. Log back in as the admin, click **Turn on** on the student, then **Yes**.
    - Expected: the button reads **Turn off** again. The student can log in again.
 6. Click **Delete** on a test student, then click **Yes**.
