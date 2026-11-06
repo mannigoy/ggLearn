@@ -6,7 +6,12 @@ export function useOnline() {
   return isConnected !== false;
 }
 
+/** True only when NetInfo reports no connection. Unknown or a NetInfo failure counts as online. */
 export async function isOfflineNow() {
-  const state = await NetInfo.fetch();
-  return state.isConnected === false;
+  try {
+    const state = await NetInfo.fetch();
+    return state?.isConnected === false;
+  } catch {
+    return false;
+  }
 }
