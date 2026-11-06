@@ -1,13 +1,11 @@
-import { Text, View } from 'react-native';
-import { fonts } from '../src/theme/fonts';
-import { tokens } from '../src/theme/tokens';
+import { Redirect } from 'expo-router';
+import { useAuth } from '../src/context/AuthContext.jsx';
+import { routeFor } from '../src/context/routeFor.js';
 
+const HOME = { auth: '/login', pending: '/pending', tabs: '/courses' };
+
+/** "/" has no screen of its own: send each user to the part of the app their role allows. */
 export default function Index() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontFamily: fonts.heading, fontSize: tokens.type.h1, color: tokens.colors.text }}>
-        GG Learn
-      </Text>
-    </View>
-  );
+  const { profile } = useAuth();
+  return <Redirect href={HOME[routeFor(profile)]} />;
 }
