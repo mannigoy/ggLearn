@@ -4,6 +4,7 @@ import com.gglearn.backend.dto.AuthUser;
 import com.gglearn.backend.dto.BadgeRequest;
 import com.gglearn.backend.dto.BadgeUpdateRequest;
 import com.gglearn.backend.entity.Badge;
+import com.gglearn.backend.entity.Role;
 import com.gglearn.backend.entity.User;
 import com.gglearn.backend.exception.ApiException;
 import com.gglearn.backend.repository.BadgeRepository;
@@ -70,7 +71,7 @@ public class BadgeService {
 	public Badge rename(AuthUser me, String id, BadgeUpdateRequest body) {
 		User caller = userService.getProfile(me);
 		Badge badge = requireBadge(id);
-		access.requireStaff(caller, badge.getCourseId());
+		requireCanManage(caller, badge);
 
 		badges.update(id, Map.of("title", Validation.title(body.title())));
 		return requireBadge(id);
@@ -79,9 +80,15 @@ public class BadgeService {
 	public void revoke(AuthUser me, String id) {
 		User caller = userService.getProfile(me);
 		Badge badge = requireBadge(id);
-		access.requireStaff(caller, badge.getCourseId());
+		requireCanManage(caller, badge);
 
 		badges.deleteById(id);
+	}
+
+	/** Staff of the badge's course. Badges outlive their course, so an admin may still manage them then. */
+	private void requireCanManage(User caller, Badge badge) {
+		if (caller.hasRole(Role.ADMIN) && !access.courseExists(badge.getCourseId())) return;
+		access.requireStaff(caller, badge.getCourseId());
 	}
 
 	private static List<Badge> newestFirst(List<Badge> found) {

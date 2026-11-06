@@ -156,6 +156,7 @@ class UserAdminServiceTest {
 		assertStatus(HttpStatus.FORBIDDEN, () -> service.setDisabled(ADMIN, "a-1", true));
 
 		verifyNoInteractions(accounts);
+		verify(users, never()).update(anyString(), anyMap());
 	}
 
 	@Test
@@ -177,6 +178,7 @@ class UserAdminServiceTest {
 
 		verifyNoInteractions(accounts);
 		verify(users, never()).deleteById(anyString());
+		verifyNoInteractions(enrollments);
 	}
 
 	@Test
@@ -210,5 +212,29 @@ class UserAdminServiceTest {
 		assertStatus(HttpStatus.BAD_REQUEST, () -> service.update(ADMIN, "s-2", new UpdateUserRequest(" a ", null, null, null)));
 
 		verify(users, never()).update(anyString(), anyMap());
+	}
+
+	@Test
+	void teacherCannotUpdateDisableOrDelete() {
+		signIn(TEACHER, "teacher");
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(TEACHER, "s-2", new UpdateUserRequest("Name", null, null, null)));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.setDisabled(TEACHER, "s-2", true));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.delete(TEACHER, "s-2"));
+
+		verifyNoInteractions(accounts);
+		verifyNoInteractions(enrollments);
+		verify(users, never()).update(anyString(), anyMap());
+		verify(users, never()).deleteById(anyString());
+	}
+
+	@Test
+	void cannotEditOwnAccountHere() {
+		signIn(ADMIN, "admin");
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(ADMIN, "a-1", new UpdateUserRequest("New Name", null, null, null)));
+
+		verify(users, never()).update(anyString(), anyMap());
+		verifyNoInteractions(accounts);
 	}
 }

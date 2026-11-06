@@ -28,6 +28,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static com.gglearn.backend.service.Fixtures.assertStatus;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 class QuestionServiceTest {
 
@@ -139,5 +143,82 @@ class QuestionServiceTest {
 		assertThatThrownBy(() -> service.create(TEACHER, "z-1", new QuestionRequest(" a ", List.of("Yes", "No"), "Yes", null)))
 				.isInstanceOfSatisfying(ApiException.class, (e) -> assertThat(e.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST));
 		verify(questions, never()).create(anyMap());
+	}
+
+	private static final AuthUser OTHER_TEACHER = new AuthUser("t-2", "t2@example.com");
+
+	private void questionExists() {
+		when(questions.findById("q-1")).thenReturn(Optional.of(question("q-1", 0L)));
+	}
+
+	@Test
+	void studentCannotCreateUpdateOrDelete() {
+		signIn(STUDENT, "student");
+		questionExists();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.create(STUDENT, "z-1", request(List.of("Yes", "No"), "Yes")));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(STUDENT, "q-1", request(List.of("Yes", "No"), "Yes")));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.delete(STUDENT, "q-1"));
+
+		verify(questions, never()).create(anyMap());
+		verify(questions, never()).update(anyString(), anyMap());
+		verify(questions, never()).deleteById(anyString());
+	}
+
+	@Test
+	void otherTeacherCannotCreateUpdateOrDelete() {
+		signIn(OTHER_TEACHER, "teacher");
+		questionExists();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.create(OTHER_TEACHER, "z-1", request(List.of("Yes", "No"), "Yes")));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(OTHER_TEACHER, "q-1", request(List.of("Yes", "No"), "Yes")));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.delete(OTHER_TEACHER, "q-1"));
+
+		verify(questions, never()).create(anyMap());
+		verify(questions, never()).update(anyString(), anyMap());
+		verify(questions, never()).deleteById(anyString());
+	}
+
+	@Test
+	void unenrolledStudentCannotList() {
+		signIn(STUDENT, "student");
+		when(enrollments.exists("c-1", "s-1")).thenReturn(false);
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.list(STUDENT, "z-1"));
+
+		verify(questions, never()).findWhere(anyString(), any());
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void ownerUpdatesAndKeepsOrderWhenNull() {
+		signIn(TEACHER, "teacher");
+		questionExists();
+
+		service.update(TEACHER, "q-1", request(List.of(" 2 ", "3 "), " 2"));
+
+		ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+		verify(questions).update(eq("q-1"), captor.capture());
+		assertThat(captor.getValue()).containsEntry("questionText", "What is 1+1?")
+				.containsEntry("choices", List.of("2", "3")).containsEntry("correctAnswer", "2").doesNotContainKey("order");
+	}
+
+	@Test
+	void ownerDeletes() {
+		signIn(TEACHER, "teacher");
+		questionExists();
+
+		service.delete(TEACHER, "q-1");
+
+		verify(questions).deleteById("q-1");
+	}
+
+	@Test
+	void missingQuestionIs404() {
+		signIn(TEACHER, "teacher");
+		when(questions.findById("nope")).thenReturn(Optional.empty());
+
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.update(TEACHER, "nope", request(List.of("Yes", "No"), "Yes")));
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.delete(TEACHER, "nope"));
 	}
 }

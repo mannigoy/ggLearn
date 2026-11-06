@@ -163,4 +163,38 @@ class LessonServiceTest {
 
 		verify(lessons, never()).create(anyMap());
 	}
+
+	private static final AuthUser OTHER_TEACHER = new AuthUser("t-2", "t2@example.com");
+
+	@Test
+	void studentCannotUpdate() {
+		signIn(STUDENT, "student");
+		when(courses.findById("c-1")).thenReturn(Optional.of(course("c-1", "t-1")));
+		when(lessons.findById("l-1")).thenReturn(Optional.of(lesson("l-1", 0L, 1)));
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(STUDENT, "l-1", request(null)));
+
+		verify(lessons, never()).update(anyString(), anyMap());
+	}
+
+	@Test
+	void otherTeacherCannotUpdate() {
+		signIn(OTHER_TEACHER, "teacher");
+		when(courses.findById("c-1")).thenReturn(Optional.of(course("c-1", "t-1")));
+		when(lessons.findById("l-1")).thenReturn(Optional.of(lesson("l-1", 0L, 1)));
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(OTHER_TEACHER, "l-1", request(null)));
+
+		verify(lessons, never()).update(anyString(), anyMap());
+	}
+
+	@Test
+	void missingLessonUpdateIs404() {
+		signIn(TEACHER, "teacher");
+		when(lessons.findById("nope")).thenReturn(Optional.empty());
+
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.update(TEACHER, "nope", request(null)));
+
+		verify(lessons, never()).update(anyString(), anyMap());
+	}
 }

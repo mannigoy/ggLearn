@@ -24,6 +24,10 @@ public class CourseAccess {
 		return courses.findById(courseId).orElseThrow(() -> ApiException.notFound("That course doesn’t exist."));
 	}
 
+	public boolean courseExists(String courseId) {
+		return courses.findById(courseId).isPresent();
+	}
+
 	/** An admin, or the teacher who owns the course. A demoted owner is not staff. */
 	public boolean isStaff(User caller, Course course) {
 		if (caller.hasRole(Role.ADMIN)) return true;

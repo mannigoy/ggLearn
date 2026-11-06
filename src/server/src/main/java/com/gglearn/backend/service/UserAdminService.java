@@ -59,6 +59,7 @@ public class UserAdminService {
 
 	public User update(AuthUser me, String uid, UpdateUserRequest body) {
 		userService.requireRole(me, Role.ADMIN);
+		if (me.uid().equals(uid)) throw ApiException.forbidden("You can’t change your own account here.");
 		User target = find(uid);
 
 		Map<String, Object> fields = new HashMap<>();

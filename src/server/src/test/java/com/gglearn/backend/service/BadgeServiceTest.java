@@ -307,4 +307,39 @@ class BadgeServiceTest {
 
 		verify(badges, never()).update(anyString(), anyMap());
 	}
+
+	@Test
+	void adminRenamesBadgeOfDeletedCourse() {
+		signIn(ADMIN, "admin");
+		when(courses.findById("c-1")).thenReturn(Optional.empty());
+		badgeExists();
+
+		service.rename(ADMIN, "b-1", new BadgeUpdateRequest("  Super Star "));
+
+		verify(badges).update("b-1", Map.of("title", "Super Star"));
+	}
+
+	@Test
+	void adminRevokesBadgeOfDeletedCourse() {
+		signIn(ADMIN, "admin");
+		when(courses.findById("c-1")).thenReturn(Optional.empty());
+		badgeExists();
+
+		service.revoke(ADMIN, "b-1");
+
+		verify(badges).deleteById("b-1");
+	}
+
+	@Test
+	void teacherCannotActOnBadgeOfDeletedCourse() {
+		signIn(TEACHER, "teacher");
+		when(courses.findById("c-1")).thenReturn(Optional.empty());
+		badgeExists();
+
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.rename(TEACHER, "b-1", new BadgeUpdateRequest("Star")));
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.revoke(TEACHER, "b-1"));
+
+		verify(badges, never()).update(anyString(), anyMap());
+		verify(badges, never()).deleteById(anyString());
+	}
 }

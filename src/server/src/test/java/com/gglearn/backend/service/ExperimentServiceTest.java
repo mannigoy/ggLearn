@@ -26,6 +26,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 class ExperimentServiceTest {
 
@@ -102,5 +104,71 @@ class ExperimentServiceTest {
 				() -> service.create(TEACHER, "l-1", new ExperimentRequest(" a ", List.of("cup"), List.of("Fill it."), null)));
 
 		verify(experiments, never()).create(anyMap());
+	}
+
+	private static final AuthUser OTHER_TEACHER = new AuthUser("t-2", "t2@example.com");
+
+	private void experimentExists() {
+		Experiment experiment = new Experiment();
+		experiment.setId("e-1");
+		experiment.setCourseId("c-1");
+		when(experiments.findById("e-1")).thenReturn(Optional.of(experiment));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void ownerUpdates() {
+		signIn(TEACHER, "teacher");
+		experimentExists();
+
+		service.update(TEACHER, "e-1", request());
+
+		ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+		verify(experiments).update(eq("e-1"), captor.capture());
+		assertThat(captor.getValue()).containsEntry("title", "Bean cup").containsEntry("materials", List.of("cup"));
+	}
+
+	@Test
+	void ownerDeletes() {
+		signIn(TEACHER, "teacher");
+		experimentExists();
+
+		service.delete(TEACHER, "e-1");
+
+		verify(experiments).deleteById("e-1");
+	}
+
+	@Test
+	void studentCannotUpdateOrDelete() {
+		signIn(STUDENT, "student");
+		experimentExists();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(STUDENT, "e-1", request()));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.delete(STUDENT, "e-1"));
+
+		verify(experiments, never()).update(anyString(), anyMap());
+		verify(experiments, never()).deleteById(anyString());
+	}
+
+	@Test
+	void otherTeacherCannotUpdateOrDelete() {
+		signIn(OTHER_TEACHER, "teacher");
+		experimentExists();
+
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.update(OTHER_TEACHER, "e-1", request()));
+		assertStatus(HttpStatus.FORBIDDEN, () -> service.delete(OTHER_TEACHER, "e-1"));
+
+		verify(experiments, never()).update(anyString(), anyMap());
+		verify(experiments, never()).deleteById(anyString());
+	}
+
+	@Test
+	void missingExperimentUpdateIs404() {
+		signIn(TEACHER, "teacher");
+		when(experiments.findById("nope")).thenReturn(Optional.empty());
+
+		assertStatus(HttpStatus.NOT_FOUND, () -> service.update(TEACHER, "nope", request()));
+
+		verify(experiments, never()).update(anyString(), anyMap());
 	}
 }
