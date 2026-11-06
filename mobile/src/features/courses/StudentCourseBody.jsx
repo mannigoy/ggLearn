@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import Confirm from '../../components/Confirm';
 import { Empty, ErrorState, Loading } from '../../components/States';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useRefreshOn } from './useRefreshOn.js';
 import { useAsync } from '../../lib/useAsync.js';
 import { enroll, myEnrollments, unenroll } from '../../services/enrollmentApi.js';
 import { listLessons } from '../../services/lessonApi.js';
@@ -31,13 +32,14 @@ export function LessonList({ lessons }) {
   ));
 }
 
-export default function StudentCourseBody({ course }) {
+export default function StudentCourseBody({ course, refreshKey = 0 }) {
   const { profile } = useAuth();
   const { data, error, loading, reload } = useAsync(async () => {
     const mine = await myEnrollments();
     const enrolled = mine.some((e) => e.courseId === course.id);
     return { enrolled, lessons: enrolled ? await listLessons(course.id) : null };
   }, [course.id]);
+  useRefreshOn(refreshKey, reload);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
 

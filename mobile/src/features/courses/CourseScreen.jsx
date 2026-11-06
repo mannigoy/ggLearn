@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Card from '../../components/Card';
 import Screen from '../../components/Screen';
@@ -11,6 +12,7 @@ import { listLessons } from '../../services/lessonApi.js';
 import { fonts } from '../../theme/fonts';
 import { tokens } from '../../theme/tokens';
 import StudentCourseBody, { LessonList } from './StudentCourseBody';
+import { useRefreshOn } from './useRefreshOn.js';
 
 function CourseHeader({ course }) {
   return (
@@ -23,8 +25,9 @@ function CourseHeader({ course }) {
 }
 
 // Temporary read-only view for the owning teacher and admins. Task 14 replaces it with StaffCourseBody.
-function StaffPreview({ course }) {
+function StaffPreview({ course, refreshKey }) {
   const { data, error, loading, reload } = useAsync(() => listLessons(course.id), [course.id]);
+  useRefreshOn(refreshKey, reload);
   if (loading) return <Loading />;
   if (!data) return <ErrorState message={error} onRetry={reload} />;
   return <LessonList lessons={data} />;
@@ -33,6 +36,11 @@ function StaffPreview({ course }) {
 export default function CourseScreen({ id }) {
   const { profile } = useAuth();
   const { data: course, error, loading, reloading, reload } = useAsync(() => getCourse(id), [id]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = () => {
+    reload();
+    setRefreshKey((n) => n + 1);
+  };
 
   let body;
   if (loading) body = <Loading />;
@@ -42,12 +50,16 @@ export default function CourseScreen({ id }) {
       <>
         {error ? <ErrorState message={error} onRetry={reload} /> : null}
         <CourseHeader course={course} />
-        {isStaff(profile, course) ? <StaffPreview course={course} /> : <StudentCourseBody course={course} />}
+        {isStaff(profile, course) ? (
+          <StaffPreview course={course} refreshKey={refreshKey} />
+        ) : (
+          <StudentCourseBody course={course} refreshKey={refreshKey} />
+        )}
       </>
     );
   }
   return (
-    <Screen refreshing={reloading} onRefresh={reload}>
+    <Screen refreshing={reloading} onRefresh={refresh}>
       {body}
     </Screen>
   );

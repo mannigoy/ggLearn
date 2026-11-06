@@ -9,6 +9,7 @@ export default function Screen({ title, children, scroll = true, refreshing = fa
     <SafeAreaView style={styles.safe}>
       {scroll ? (
         <ScrollView
+          testID="screen-scroll"
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
           refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined}

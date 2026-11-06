@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getCourse } from '../../services/courseApi.js';
@@ -90,6 +90,32 @@ describe('StudentCourseBody', () => {
     listLessons.mockResolvedValue([]);
     await render(<StudentCourseBody course={course} />);
     expect(await screen.findByText('No lessons yet.')).toBeTruthy();
+  });
+});
+
+describe('CourseScreen pull to refresh', () => {
+  const pull = () => act(async () => screen.getByTestId('screen-scroll').props.refreshControl.props.onRefresh());
+
+  it('reloads enrollment and lessons for a student while the old lessons stay visible', async () => {
+    await render(<CourseScreen id="c1" />);
+    await screen.findByLabelText('Open lesson Rain');
+    let finish;
+    listLessons.mockReturnValue(new Promise((r) => { finish = r; }));
+    await pull();
+    await waitFor(() => expect(listLessons).toHaveBeenCalledTimes(2));
+    expect(myEnrollments).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText('Open lesson Rain')).toBeTruthy();
+    await act(async () => finish([...lessons, { id: 'l4', title: 'Snow', order: 4 }]));
+    expect(await screen.findByLabelText('Open lesson Snow')).toBeTruthy();
+  });
+
+  it('reloads the lessons for staff', async () => {
+    useAuth.mockReturnValue({ profile: { uid: 't1', role: 'teacher' } });
+    await render(<CourseScreen id="c1" />);
+    await screen.findByLabelText('Open lesson Rain');
+    await pull();
+    await waitFor(() => expect(listLessons).toHaveBeenCalledTimes(2));
+    expect(screen.getByLabelText('Open lesson Rain')).toBeTruthy();
   });
 });
 
