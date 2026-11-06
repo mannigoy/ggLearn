@@ -28,10 +28,11 @@ export default function LessonsTab({ courseId, isStaff, go }) {
     setBusy(true);
     try {
       await action();
-      lessons.reload();
     } catch (err) {
       setActionError(err.message);
     } finally {
+      // A failed move may have changed one lesson, so show the real order either way.
+      lessons.reload();
       setBusy(false);
     }
   };
@@ -54,7 +55,7 @@ export default function LessonsTab({ courseId, isStaff, go }) {
 
   let body;
   if (lessons.loading) body = <Loading label="Loading lessons…" />;
-  else if (lessons.error) body = <ErrorState message={lessons.error} onRetry={lessons.reload} />;
+  else if (!lessons.data) body = <ErrorState message={lessons.error} onRetry={lessons.reload} />;
   else if (lessons.data.length === 0) {
     body = <Empty title="No lessons yet">{isStaff ? 'Add the first lesson.' : 'Your teacher will add lessons soon.'}</Empty>;
   } else {
@@ -93,6 +94,7 @@ export default function LessonsTab({ courseId, isStaff, go }) {
         </div>
       )}
       {actionError && <p className="alert" role="alert">{actionError}</p>}
+      {lessons.data && lessons.error && <ErrorState message={lessons.error} onRetry={lessons.reload} />}
       {body}
     </section>
   );

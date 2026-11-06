@@ -5,7 +5,7 @@ import Tabs from '../../components/ui/Tabs.jsx';
 import { ROLES, TOPICS } from '../../constants/index.js';
 import { useAsync } from '../../hooks/useAsync.js';
 import { getCourse } from '../../services/courseApi.js';
-import { unenroll } from '../../services/enrollmentApi.js';
+import { enroll, myEnrollments, unenroll } from '../../services/enrollmentApi.js';
 import BadgesTab from './BadgesTab.jsx';
 import LessonsTab from './LessonsTab.jsx';
 import StudentsTab from './StudentsTab.jsx';
@@ -18,8 +18,14 @@ const TABS = [
 ];
 
 export default function CoursePage({ user, id, tab, go }) {
-  const course = useAsync(() => getCourse(id), [id]);
-  const [leaveError, setLeaveError] = useState('');
+  const isStudent = user.role === ROLES.STUDENT;
+  // A student also needs to know whether they have joined this course.
+  const course = useAsync(async () => {
+    const [found, mine] = await Promise.all([getCourse(id), isStudent ? myEnrollments() : Promise.resolve([])]);
+    return { course: found, enrolled: !isStudent || mine.some((e) => e.courseId === id) };
+  }, [id, isStudent]);
+  const [actionError, setActionError] = useState('');
+  const [joining, setJoining] = useState(false);
 
   const back = (
     <button type="button" className="btn small plain" onClick={() => go({ name: 'courses' })}>
@@ -28,37 +34,56 @@ export default function CoursePage({ user, id, tab, go }) {
   );
 
   if (course.loading) return <>{back}<Loading label="Loading course…" /></>;
-  if (course.error) return <>{back}<ErrorState message={course.error} onRetry={course.reload} /></>;
+  if (!course.data) return <>{back}<ErrorState message={course.error} onRetry={course.reload} /></>;
 
-  const c = course.data;
+  const c = course.data.course;
+  const enrolled = course.data.enrolled;
   const isStaff = user.role === ROLES.ADMIN || (user.role === ROLES.TEACHER && c.teacherUid === user.uid);
-  const isStudent = user.role === ROLES.STUDENT;
   const active = isStaff && TABS.some((t) => t.id === tab) ? tab : 'lessons';
 
   const leave = async () => {
-    setLeaveError('');
+    setActionError('');
     try {
       await unenroll(id, user.uid);
       go({ name: 'courses' });
     } catch (err) {
-      setLeaveError(err.message);
+      setActionError(err.message);
+    }
+  };
+
+  const join = async () => {
+    if (joining) return;
+    setActionError('');
+    setJoining(true);
+    try {
+      await enroll(id);
+      course.reload();
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setJoining(false);
     }
   };
 
   return (
     <>
       {back}
+      {course.error && <ErrorState message={course.error} onRetry={course.reload} />}
       <div className="page-head">
         <div>
           <h1>{c.title}</h1>
           <span className="chip">{gradeName(c.gradeLevel)}</span>{' '}
           <span className="chip sun">{TOPICS[c.topic] ?? c.topic}</span>
         </div>
-        {isStudent && <Confirm label="Leave course" onYes={leave} />}
+        {isStudent && enrolled && <Confirm label="Leave course" onYes={leave} />}
+        {isStudent && !enrolled && (
+          <button type="button" className="btn" disabled={joining} onClick={join}>Enroll</button>
+        )}
       </div>
-      {leaveError && <p className="alert" role="alert">{leaveError}</p>}
+      {actionError && <p className="alert" role="alert">{actionError}</p>}
       {isStaff && <Tabs tabs={TABS} active={active} onChange={(next) => go({ name: 'course', id, tab: next })} />}
-      {active === 'lessons' && <LessonsTab courseId={id} isStaff={isStaff} go={go} />}
+      {isStudent && !enrolled && <p className="muted">Enroll to see the lessons.</p>}
+      {active === 'lessons' && !(isStudent && !enrolled) && <LessonsTab courseId={id} isStaff={isStaff} go={go} />}
       {isStaff && active === 'students' && <StudentsTab courseId={id} />}
       {isStaff && active === 'badges' && <BadgesTab courseId={id} />}
     </>

@@ -63,7 +63,7 @@ function ExperimentsSection({ lessonId, isStaff }) {
     const initial = s.editing === 'new' ? undefined : list.data.find((x) => x.id === s.editing);
     body = <ExperimentForm initial={initial} onSave={s.save} onCancel={() => s.setEditing(null)} />;
   } else if (list.loading) body = <Loading label="Loading experiments…" />;
-  else if (list.error) body = <ErrorState message={list.error} onRetry={list.reload} />;
+  else if (!list.data) body = <ErrorState message={list.error} onRetry={list.reload} />;
   else if (list.data.length === 0) {
     body = <Empty title="No experiments yet">{isStaff ? 'Add the first experiment.' : 'Check back soon.'}</Empty>;
   } else {
@@ -107,6 +107,7 @@ function ExperimentsSection({ lessonId, isStaff }) {
         )}
       </div>
       {s.actionError && <p className="alert" role="alert">{s.actionError}</p>}
+      {list.data && list.error && <ErrorState message={list.error} onRetry={list.reload} />}
       {body}
     </section>
   );
@@ -132,7 +133,7 @@ function QuizzesSection({ lessonId, isStaff, go }) {
       />
     );
   } else if (list.loading) body = <Loading label="Loading quizzes…" />;
-  else if (list.error) body = <ErrorState message={list.error} onRetry={list.reload} />;
+  else if (!list.data) body = <ErrorState message={list.error} onRetry={list.reload} />;
   else if (list.data.length === 0) {
     body = <Empty title="No quizzes yet">{isStaff ? 'Add the first quiz.' : 'Check back soon.'}</Empty>;
   } else {
@@ -167,6 +168,7 @@ function QuizzesSection({ lessonId, isStaff, go }) {
         )}
       </div>
       {s.actionError && <p className="alert" role="alert">{s.actionError}</p>}
+      {list.data && list.error && <ErrorState message={list.error} onRetry={list.reload} />}
       {body}
     </section>
   );
@@ -190,7 +192,7 @@ export default function LessonPage({ user, id, go }) {
   );
 
   if (lesson.loading) return <>{back}<Loading label="Loading lesson…" /></>;
-  if (lesson.error) return <>{back}<ErrorState message={lesson.error} onRetry={lesson.reload} /></>;
+  if (!lesson.data) return <>{back}<ErrorState message={lesson.error} onRetry={lesson.reload} /></>;
 
   const l = lesson.data;
   const c = course.data;
@@ -205,6 +207,7 @@ export default function LessonPage({ user, id, go }) {
   return (
     <>
       {back}
+      {lesson.error && <ErrorState message={lesson.error} onRetry={lesson.reload} />}
       {editing ? (
         <LessonForm initial={l} onSave={saveLesson} onCancel={() => setEditing(false)} />
       ) : (

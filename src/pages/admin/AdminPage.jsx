@@ -131,7 +131,7 @@ export default function AdminPage({ user, onUsersChanged }) {
 
   let body;
   if (users.loading) body = <Loading label="Loading users…" />;
-  else if (users.error) body = <ErrorState message={users.error} onRetry={users.reload} />;
+  else if (!users.data) body = <ErrorState message={users.error} onRetry={users.reload} />;
   else {
     const active = FILTERS.find((f) => f.key === filter);
     const shown = users.data.filter(active.test);
@@ -180,6 +180,7 @@ export default function AdminPage({ user, onUsersChanged }) {
       </div>
       {actionError && <p className="alert" role="alert">{actionError}</p>}
       {notice && <p className="alert" role="status">{notice}</p>}
+      {users.data && users.error && <ErrorState message={users.error} onRetry={users.reload} />}
       <section className="card" aria-label="All users">{body}</section>
     </>
   );

@@ -11,7 +11,7 @@ export default function BadgesPage() {
 
   let body;
   if (data.loading) body = <Loading label="Loading badges…" />;
-  else if (data.error) body = <ErrorState message={data.error} onRetry={data.reload} />;
+  else if (!data.data) body = <ErrorState message={data.error} onRetry={data.reload} />;
   else if (data.data.badges.length === 0) {
     body = <Empty title="No badges yet. Finish a course to earn one." />;
   } else {
@@ -34,6 +34,7 @@ export default function BadgesPage() {
   return (
     <>
       <h1>My badges</h1>
+      {data.data && data.error && <ErrorState message={data.error} onRetry={data.reload} />}
       <section className="card" aria-label="Badges">{body}</section>
     </>
   );

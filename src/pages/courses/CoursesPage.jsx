@@ -63,7 +63,7 @@ function StaffCourses({ user, go }) {
 
   let body;
   if (courses.loading) body = <Loading label="Loading courses…" />;
-  else if (courses.error) body = <ErrorState message={courses.error} onRetry={courses.reload} />;
+  else if (!courses.data) body = <ErrorState message={courses.error} onRetry={courses.reload} />;
   else if (courses.data.length === 0) {
     body = <Empty title="No courses yet">Create your first course to add lessons.</Empty>;
   } else {
@@ -88,6 +88,7 @@ function StaffCourses({ user, go }) {
         <button type="button" className="btn" onClick={() => setEditing('new')}>New course</button>
       </div>
       {actionError && <p className="alert" role="alert">{actionError}</p>}
+      {courses.data && courses.error && <ErrorState message={courses.error} onRetry={courses.reload} />}
       <section className="card" aria-label="Courses">{body}</section>
     </>
   );
@@ -117,7 +118,7 @@ function StudentCourses({ go }) {
   const open = (c) => go({ name: 'course', id: c.id, tab: 'lessons' });
 
   if (data.loading) return <><h1>My courses</h1><Loading label="Loading courses…" /></>;
-  if (data.error) return <><h1>My courses</h1><ErrorState message={data.error} onRetry={data.reload} /></>;
+  if (!data.data) return <><h1>My courses</h1><ErrorState message={data.error} onRetry={data.reload} /></>;
 
   const mine = data.data.courses.filter((c) => data.data.enrolledIds.has(c.id));
   const others = data.data.courses.filter(
@@ -127,6 +128,7 @@ function StudentCourses({ go }) {
   return (
     <>
       <h1>My courses</h1>
+      {data.error && <ErrorState message={data.error} onRetry={data.reload} />}
       <section className="card" aria-labelledby="mine-title">
         <h2 id="mine-title">Joined</h2>
         {mine.length === 0 ? (
@@ -173,8 +175,9 @@ function ReadOnlyCourses({ go }) {
       <h1>All courses</h1>
       <section className="card" aria-label="Courses">
         {courses.loading && <Loading label="Loading courses…" />}
-        {!courses.loading && courses.error && <ErrorState message={courses.error} onRetry={courses.reload} />}
-        {!courses.loading && !courses.error && (courses.data.length === 0 ? (
+        {courses.data && courses.error && <ErrorState message={courses.error} onRetry={courses.reload} />}
+        {!courses.loading && !courses.data && <ErrorState message={courses.error} onRetry={courses.reload} />}
+        {courses.data && (courses.data.length === 0 ? (
           <Empty title="No courses yet" />
         ) : (
           <ul className="plain-list">

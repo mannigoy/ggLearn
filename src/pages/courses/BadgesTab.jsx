@@ -71,7 +71,7 @@ export default function BadgesTab({ courseId }) {
 
   let list;
   if (badges.loading) list = <Loading label="Loading badges…" />;
-  else if (badges.error) list = <ErrorState message={badges.error} onRetry={badges.reload} />;
+  else if (!badges.data) list = <ErrorState message={badges.error} onRetry={badges.reload} />;
   else if (badges.data.length === 0) list = <Empty title="No badges awarded yet" />;
   else {
     list = (
@@ -102,10 +102,12 @@ export default function BadgesTab({ courseId }) {
     <section className="card" aria-label="Badges">
       <h2>Badges</h2>
       {actionError && <p className="alert" role="alert">{actionError}</p>}
+      {badges.data && badges.error && <ErrorState message={badges.error} onRetry={badges.reload} />}
       {list}
       {roster.loading && <Loading label="Loading students…" />}
-      {!roster.loading && roster.error && <ErrorState message={roster.error} onRetry={roster.reload} />}
-      {!roster.loading && !roster.error && <BadgeForm roster={roster.data} onSave={award} />}
+      {!roster.loading && !roster.data && <ErrorState message={roster.error} onRetry={roster.reload} />}
+      {roster.data && roster.error && <ErrorState message={roster.error} onRetry={roster.reload} />}
+      {roster.data && <BadgeForm roster={roster.data} onSave={award} />}
     </section>
   );
 }

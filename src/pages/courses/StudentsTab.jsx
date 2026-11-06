@@ -36,7 +36,7 @@ export default function StudentsTab({ courseId }) {
   };
 
   if (roster.loading) return <section className="card"><Loading label="Loading students…" /></section>;
-  if (roster.error) return <section className="card"><ErrorState message={roster.error} onRetry={roster.reload} /></section>;
+  if (!roster.data) return <section className="card"><ErrorState message={roster.error} onRetry={roster.reload} /></section>;
 
   const enrolled = new Set(roster.data.map((r) => r.studentUid));
   const available = (students.data ?? []).filter((s) => !enrolled.has(s.uid));
@@ -52,6 +52,7 @@ export default function StudentsTab({ courseId }) {
         </select>
       </div>
       <button type="button" className="btn small" disabled={busy || !pick} onClick={add}>Add</button>
+      {roster.error && <ErrorState message={roster.error} onRetry={roster.reload} />}
       {students.error && <p className="alert" role="alert">{students.error}</p>}
       {message && <p className="alert" role="alert">{message}</p>}
       {roster.data.length === 0 ? (

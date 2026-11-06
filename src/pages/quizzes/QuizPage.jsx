@@ -33,7 +33,7 @@ export default function QuizPage({ user, id, go }) {
   );
 
   if (quiz.loading) return <>{back}<Loading label="Loading quiz…" /></>;
-  if (quiz.error) return <>{back}<ErrorState message={quiz.error} onRetry={quiz.reload} /></>;
+  if (!quiz.data) return <>{back}<ErrorState message={quiz.error} onRetry={quiz.reload} /></>;
 
   const q = quiz.data;
   const c = course.data;
@@ -41,7 +41,7 @@ export default function QuizPage({ user, id, go }) {
 
   const save = async (body) => {
     if (editing === 'new') {
-      const order = questions.data.reduce((max, x) => Math.max(max, x.order ?? 0), 0) + 1;
+      const order = (questions.data ?? []).reduce((max, x) => Math.max(max, x.order ?? 0), 0) + 1;
       await createQuestion(id, { ...body, order });
     } else {
       const existing = questions.data.find((x) => x.id === editing);
@@ -72,7 +72,7 @@ export default function QuizPage({ user, id, go }) {
     const initial = editing === 'new' ? undefined : questions.data.find((x) => x.id === editing);
     body = <QuestionForm initial={initial} onSave={save} onCancel={() => setEditing(null)} />;
   } else if (questions.loading) body = <Loading label="Loading questions…" />;
-  else if (questions.error) body = <ErrorState message={questions.error} onRetry={questions.reload} />;
+  else if (!questions.data) body = <ErrorState message={questions.error} onRetry={questions.reload} />;
   else if (questions.data.length === 0) {
     body = <Empty title="No questions yet">{isStaff ? 'Add the first question.' : 'Check back soon.'}</Empty>;
   } else {
@@ -114,6 +114,7 @@ export default function QuizPage({ user, id, go }) {
   return (
     <>
       {back}
+      {quiz.error && <ErrorState message={quiz.error} onRetry={quiz.reload} />}
       <article className="card">
         <div className="page-head">
           <div>
@@ -126,6 +127,7 @@ export default function QuizPage({ user, id, go }) {
         </div>
         {!isStaff && <p role="note">Taking quizzes is coming soon.</p>}
         {actionError && <p className="alert" role="alert">{actionError}</p>}
+        {questions.data && questions.error && <ErrorState message={questions.error} onRetry={questions.reload} />}
         {body}
       </article>
     </>
