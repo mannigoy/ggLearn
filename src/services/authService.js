@@ -121,6 +121,8 @@ export function mapAuthError(error) {
     case 'auth/wrong-password':
     case 'auth/user-not-found':
       return { password: 'Email or password is incorrect.' };
+    case 'auth/user-disabled':
+      return { form: 'Your account is turned off. Ask your admin.' };
     case 'auth/too-many-requests':
       return { form: 'Too many attempts. Wait a moment and try again.' };
     case 'auth/network-request-failed':

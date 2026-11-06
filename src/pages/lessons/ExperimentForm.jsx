@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
 import ListEditor from '../../components/ui/ListEditor.jsx';
 import { validateExperiment } from '../../utils/validate.js';
+import { serverErrors } from '../../utils/formErrors.js';
 
 /** Create or edit an experiment. `onSave` gets { title, materials, steps, safetyNotes }. */
 export default function ExperimentForm({ initial, onSave, onCancel }) {
@@ -31,8 +32,7 @@ export default function ExperimentForm({ initial, onSave, onCancel }) {
         safetyNotes: form.safetyNotes.trim()
       });
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['title', 'materials', 'steps', 'safetyNotes']));
       setBusy(false);
     }
   };

@@ -1,6 +1,6 @@
 import { auth } from './firebase.js';
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api';
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
 const OFFLINE_MESSAGE = 'Can’t reach the GG Learn server. Is the backend running?';
 
@@ -33,7 +33,11 @@ async function readProblem(response) {
 export async function apiFetch(path, { method = 'GET', body } = {}) {
   const headers = {};
   if (auth?.currentUser) {
-    headers.Authorization = `Bearer ${await auth.currentUser.getIdToken()}`;
+    try {
+      headers.Authorization = `Bearer ${await auth.currentUser.getIdToken()}`;
+    } catch {
+      throw new ApiError(0, GENERIC_MESSAGE);
+    }
   }
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
@@ -54,5 +58,9 @@ export async function apiFetch(path, { method = 'GET', body } = {}) {
     throw new ApiError(response.status, problem.detail ?? GENERIC_MESSAGE, problem.fields ?? {});
   }
   if (response.status === 204) return null;
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new ApiError(response.status, GENERIC_MESSAGE);
+  }
 }

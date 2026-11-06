@@ -55,6 +55,8 @@ function StaffCourses({ user, go }) {
       <CourseForm
         initial={editing === 'new' ? null : editing}
         teachers={isAdmin ? teachers.data ?? [] : undefined}
+        teachersLoading={isAdmin && teachers.loading}
+        teachersError={isAdmin ? teachers.error ?? '' : ''}
         onSave={save}
         onCancel={() => setEditing(null)}
       />

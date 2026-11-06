@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
 import ListEditor from '../../components/ui/ListEditor.jsx';
 import { validateQuestion } from '../../utils/validate.js';
+import { serverErrors } from '../../utils/formErrors.js';
 
 /** Create or edit a question. `onSave` gets { questionText, choices, correctAnswer }. */
 export default function QuestionForm({ initial, onSave, onCancel }) {
@@ -37,8 +38,7 @@ export default function QuestionForm({ initial, onSave, onCancel }) {
         correctAnswer: form.correctAnswer.trim()
       });
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['questionText', 'choices', 'correctAnswer']));
       setBusy(false);
     }
   };

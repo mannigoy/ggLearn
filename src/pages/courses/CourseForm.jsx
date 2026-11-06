@@ -2,18 +2,27 @@ import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
 import { GRADES, TOPICS } from '../../constants/index.js';
 import { validateCourse } from '../../utils/validate.js';
+import { serverErrors } from '../../utils/formErrors.js';
 
-/** Create or edit a course. `teachers` is given for admins, who can pick the owner. */
-export default function CourseForm({ initial, teachers, onSave, onCancel }) {
+/**
+ * Create or edit a course. `teachers` is given for admins, who can pick the owner.
+ * `teachersLoading` and `teachersError` describe loading that list.
+ */
+export default function CourseForm({ initial, teachers, teachersLoading = false, teachersError = '', onSave, onCancel }) {
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     gradeLevel: initial?.gradeLevel ?? '',
     topic: initial?.topic ?? '',
-    teacherUid: initial?.teacherUid ?? ''
+    teacherUid: ''
   });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  // The current owner is always pickable, even if they are not in the loaded list.
+  const owner = initial?.teacherUid && !(teachers ?? []).some((t) => t.uid === initial.teacherUid)
+    ? { uid: initial.teacherUid, name: initial.teacherName || 'Current teacher' }
+    : null;
+  const teacherOptions = owner ? [owner, ...(teachers ?? [])] : (teachers ?? []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -26,8 +35,7 @@ export default function CourseForm({ initial, teachers, onSave, onCancel }) {
     try {
       await onSave(body);
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['title', 'gradeLevel', 'topic', 'teacherUid']));
       setBusy(false);
     }
   };
@@ -53,11 +61,14 @@ export default function CourseForm({ initial, teachers, onSave, onCancel }) {
       </Field>
       {teachers && (
         <Field id="course-teacher" label="Teacher" error={errors.teacherUid}>
-          <select id="course-teacher" value={form.teacherUid} onChange={set('teacherUid')}>
-            <option value="">Me</option>
-            {teachers.map((t) => <option key={t.uid} value={t.uid}>{t.name}</option>)}
+          <select id="course-teacher" value={form.teacherUid} onChange={set('teacherUid')} disabled={teachersLoading}>
+            <option value="">{initial ? `Keep current teacher (${initial.teacherName || 'unknown'})` : 'Me'}</option>
+            {teacherOptions.map((t) => <option key={t.uid} value={t.uid}>{t.name}</option>)}
           </select>
         </Field>
+      )}
+      {teachers && teachersError && (
+        <p className="alert" role="alert">Couldn’t load the teachers list. {teachersError}</p>
       )}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={busy}>{busy ? 'Saving…' : 'Save course'}</button>

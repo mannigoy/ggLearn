@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
 import { TOPICS } from '../../constants/index.js';
 import { validateLesson } from '../../utils/validate.js';
+import { serverErrors } from '../../utils/formErrors.js';
 
 /** Create or edit a lesson. `onSave` gets { title, topic, content }. */
 export default function LessonForm({ initial, onSave, onCancel }) {
@@ -24,8 +25,7 @@ export default function LessonForm({ initial, onSave, onCancel }) {
     try {
       await onSave({ title: form.title.trim(), topic: form.topic, content: form.content.trim() });
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['title', 'topic', 'content']));
       setBusy(false);
     }
   };

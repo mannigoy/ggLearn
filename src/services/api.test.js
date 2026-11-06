@@ -77,4 +77,39 @@ describe('apiFetch', () => {
     await apiFetch('/courses');
     expect(globalThis.fetch.mock.calls[0][0]).toBe('http://localhost:8080/api/courses');
   });
+
+  it('maps a token failure to ApiError status 0', async () => {
+    const { auth } = await import('./firebase.js');
+    const original = auth.currentUser.getIdToken;
+    auth.currentUser.getIdToken = async () => {
+      throw new Error('token expired');
+    };
+    try {
+      const error = await apiFetch('/courses').catch((e) => e);
+      expect(error).toBeInstanceOf(ApiError);
+      expect(error.status).toBe(0);
+      expect(error.message).toBe('Something went wrong. Please try again.');
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    } finally {
+      auth.currentUser.getIdToken = original;
+    }
+  });
+
+  it('maps an unreadable success body to ApiError with the response status', async () => {
+    globalThis.fetch.mockResolvedValue(new Response('<html>not json</html>', { status: 200 }));
+    const error = await apiFetch('/courses').catch((e) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.status).toBe(200);
+    expect(error.message).toBe('Something went wrong. Please try again.');
+  });
+
+  it('falls back to the default base when VITE_API_URL is empty', async () => {
+    vi.stubEnv('VITE_API_URL', '');
+    vi.resetModules();
+    const fresh = await import('./api.js');
+    globalThis.fetch.mockResolvedValue(jsonResponse(200, []));
+    await fresh.apiFetch('/courses');
+    expect(globalThis.fetch.mock.calls[0][0]).toBe('http://localhost:8080/api/courses');
+    vi.unstubAllEnvs();
+  });
 });

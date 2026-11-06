@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
+import { serverErrors } from '../../utils/formErrors.js';
 
 /** Award a badge to an enrolled student. `onSave` gets { userUid, title }. */
 export default function BadgeForm({ roster, onSave }) {
@@ -23,8 +24,7 @@ export default function BadgeForm({ roster, onSave }) {
       setUserUid('');
       setTitle('');
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['title', 'userUid']));
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Field from '../../components/ui/Field.jsx';
 import { validateQuiz } from '../../utils/validate.js';
+import { serverErrors } from '../../utils/formErrors.js';
 
 /** Create or edit a quiz. `onSave` gets { title, passingScore }. `totalPoints` caps the passing score. */
 export default function QuizForm({ initial, totalPoints = 0, onSave, onCancel }) {
@@ -22,8 +23,7 @@ export default function QuizForm({ initial, totalPoints = 0, onSave, onCancel })
     try {
       await onSave({ title: form.title.trim(), passingScore: Number(form.passingScore) });
     } catch (err) {
-      const fields = err.fields ?? {};
-      setErrors(Object.keys(fields).length ? fields : { form: err.message });
+      setErrors(serverErrors(err, ['title', 'passingScore']));
       setBusy(false);
     }
   };
