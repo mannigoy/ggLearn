@@ -5,12 +5,13 @@ import { useFonts, Fredoka_600SemiBold } from '@expo-google-fonts/fredoka';
 import { Nunito_400Regular, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { AuthProvider, useAuth } from '../src/context/AuthContext.jsx';
 import { routeFor } from '../src/context/routeFor.js';
+import ProfileErrorScreen from '../src/features/auth/ProfileErrorScreen';
 import { tokens } from '../src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack({ fontsReady }) {
-  const { profile, loading } = useAuth();
+  const { user, profile, profileError, loading } = useAuth();
   const ready = fontsReady && !loading;
 
   useEffect(() => {
@@ -18,6 +19,8 @@ function RootStack({ fontsReady }) {
   }, [ready]);
 
   if (!ready) return null;
+  // Signed in but the profile can't load (offline, server down) and nothing is cached.
+  if (user && !profile && profileError) return <ProfileErrorScreen />;
   const route = routeFor(profile);
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.colors.bg } }}>

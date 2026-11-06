@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Text } from 'react-native';
 import { act, render } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../services/authService.js';
 import { getMe } from '../services/profileApi.js';
 import { isOfflineNow } from '../services/network.js';
@@ -66,8 +67,16 @@ const fire = (user) =>
     emit(user);
   });
 
-beforeEach(() => {
+const CACHE_KEY = 'gglearn:profile:u1';
+const OFFLINE = 'You’re offline. Check your internet and try again.';
+const cached = async () => {
+  const raw = await AsyncStorage.getItem(CACHE_KEY);
+  return raw ? JSON.parse(raw) : null;
+};
+
+beforeEach(async () => {
   jest.clearAllMocks();
+  await AsyncStorage.clear();
   emit = undefined;
   authService.onAuthChange.mockImplementation((cb) => {
     emit = cb;
@@ -138,12 +147,103 @@ describe('AuthProvider', () => {
     expect(latest.profile).toBeNull();
   });
 
-  it('signs out with the error message when the profile cannot load', async () => {
-    getMe.mockRejectedValue(new ApiError(0, 'Can’t reach the GG Learn server. Is the backend running?'));
+  it('caches the profile after getMe', async () => {
+    getMe.mockResolvedValue(PROFILE);
+    await mount();
+    await fire(USER);
+    expect(await cached()).toEqual(PROFILE);
+  });
+
+  it('uses the cached profile when getMe fails offline, and stays signed in', async () => {
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+    getMe.mockRejectedValue(new ApiError(0, OFFLINE));
+    await mount();
+    await fire(USER);
+    expect(authService.logout).not.toHaveBeenCalled();
+    expect(latest.user).toBe(USER);
+    expect(latest.profile).toEqual(PROFILE);
+    expect(latest.profileError).toBe('');
+    expect(latest.notice).toBe('');
+    expect(latest.loading).toBe(false);
+  });
+
+  it('keeps the user signed in with profileError when getMe fails and nothing is cached', async () => {
+    getMe.mockRejectedValue(new ApiError(503, 'Something went wrong. Please try again.'));
+    await mount();
+    await fire(USER);
+    expect(authService.logout).not.toHaveBeenCalled();
+    expect(latest.user).toBe(USER);
+    expect(latest.profile).toBeNull();
+    expect(latest.profileError).toBe('Something went wrong. Please try again.');
+    expect(latest.loading).toBe(false);
+  });
+
+  it('treats corrupt cache JSON as no cache', async () => {
+    await AsyncStorage.setItem(CACHE_KEY, '{not json');
+    getMe.mockRejectedValue(new ApiError(0, OFFLINE));
+    await mount();
+    await fire(USER);
+    expect(authService.logout).not.toHaveBeenCalled();
+    expect(latest.profile).toBeNull();
+    expect(latest.profileError).toBe(OFFLINE);
+  });
+
+  it('refreshProfile success clears profileError and caches the profile', async () => {
+    getMe.mockRejectedValueOnce(new ApiError(0, OFFLINE));
+    await mount();
+    await fire(USER);
+    expect(latest.profileError).toBe(OFFLINE);
+
+    getMe.mockResolvedValueOnce(PROFILE);
+    await act(async () => {
+      await latest.refreshProfile();
+    });
+    expect(latest.profileError).toBe('');
+    expect(latest.profile).toEqual(PROFILE);
+    expect(await cached()).toEqual(PROFILE);
+  });
+
+  it('refreshProfile failure updates profileError and rethrows', async () => {
+    getMe.mockRejectedValueOnce(new ApiError(0, OFFLINE));
+    await mount();
+    await fire(USER);
+
+    const failure = new ApiError(500, 'Server broke.');
+    getMe.mockRejectedValueOnce(failure);
+    let caught;
+    await act(async () => {
+      await latest.refreshProfile().catch((e) => {
+        caught = e;
+      });
+    });
+    expect(caught).toBe(failure);
+    expect(latest.profileError).toBe('Server broke.');
+    expect(authService.logout).not.toHaveBeenCalled();
+  });
+
+  it('signOut clears the cached profile', async () => {
+    getMe.mockResolvedValue(PROFILE);
+    await mount();
+    await fire(USER);
+    expect(await cached()).toEqual(PROFILE);
+
+    await act(async () => {
+      await latest.signOut();
+    });
+    expect(await cached()).toBeNull();
+    expect(latest.user).toBeNull();
+    expect(latest.profile).toBeNull();
+  });
+
+  it('a 404 still signs out even when a profile is cached', async () => {
+    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+    getMe.mockRejectedValue(new ApiError(404, 'User not found'));
     await mount();
     await fire(USER);
     expect(authService.logout).toHaveBeenCalledTimes(1);
-    expect(latest.notice).toBe('Can’t reach the GG Learn server. Is the backend running?');
+    expect(latest.notice).toBe('Your account has no profile yet.');
+    expect(latest.profile).toBeNull();
+    expect(await cached()).toBeNull();
   });
 
   it('skips getMe during sign up and uses the createAccount profile', async () => {
@@ -172,6 +272,7 @@ describe('AuthProvider', () => {
     expect(getMe).not.toHaveBeenCalled();
     expect(authService.logout).not.toHaveBeenCalled();
     expect(authService.createAccount).toHaveBeenCalledWith(SIGN_UP);
+    expect(await cached()).toEqual(PROFILE);
   });
 
   it('leaves the user signed out when createAccount rejects, then loads profiles normally', async () => {

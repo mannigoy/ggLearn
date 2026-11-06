@@ -4,6 +4,7 @@ import { validateUser } from '../../lib/validate.js';
 import LoginScreen from './LoginScreen';
 import SignupScreen from './SignupScreen';
 import PendingScreen from './PendingScreen';
+import ProfileErrorScreen from './ProfileErrorScreen';
 
 jest.mock('../../context/AuthContext.jsx', () => ({ useAuth: jest.fn() }));
 jest.mock('../../services/firebase.js', () => ({ auth: null, isFirebaseConfigured: false }));
@@ -144,6 +145,20 @@ describe('PendingScreen', () => {
   it('logs out', async () => {
     auth.profile = { uid: 'u1', name: 'Ana', email: 'ana@example.com', role: 'pending_teacher' };
     await render(<PendingScreen />);
+    await fireEvent.press(screen.getByLabelText('Log out'));
+    expect(auth.signOut).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ProfileErrorScreen', () => {
+  it('shows profileError, retries with refreshProfile and can log out', async () => {
+    auth.user = { uid: 'u1' };
+    auth.profileError = 'You’re offline. Check your internet and try again.';
+    auth.refreshProfile.mockRejectedValueOnce(new Error('still offline'));
+    await render(<ProfileErrorScreen />);
+    expect(screen.getByText('You’re offline. Check your internet and try again.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Try again'));
+    expect(auth.refreshProfile).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByLabelText('Log out'));
     expect(auth.signOut).toHaveBeenCalledTimes(1);
   });
