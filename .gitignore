@@ -29,3 +29,9 @@ dist-ssr
 # Firebase service-account keys (never commit)
 serviceAccountKey*.json
 *.pem
+
+# Local-only Claude / tooling files (kept on disk, not in the repo)
+.claude/
+CLAUDE.md
+.taste-skill/
+docs/
