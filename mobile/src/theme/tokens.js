@@ -1,0 +1,20 @@
+export const tokens = {
+  colors: {
+    sky: '#3BA4F5',
+    sun: '#FFC83D',
+    mint: '#2FC69A',
+    coral: '#FF7466',
+    bg: '#FFFAF3',
+    text: '#1D2B4F',
+    skyDark: '#2380CC',
+    sunDark: '#D9A21A',
+    mintDark: '#1E9C77',
+    coralDark: '#D9503F',
+    muted: '#5B6785',
+    white: '#FFFFFF',
+  },
+  radii: { card: 28, pill: 999 },
+  space: (n) => n * 4,
+  type: { body: 18, small: 17, h1: 30, h2: 24 },
+  minTouch: 48,
+};
