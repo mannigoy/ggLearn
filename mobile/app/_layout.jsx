@@ -32,7 +32,6 @@ function RootStack({ fontsReady }) {
         <Stack.Screen name="pending" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'tabs'}>
-        {/* The (tabs) group arrives in Task 7. */}
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
     </Stack>

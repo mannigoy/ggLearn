@@ -96,6 +96,34 @@ Open http://localhost:5173.
 
 If you have Firebase console access, you can do it yourself: open **Firestore → users → (your uid)** and set `role` to `admin`. Then refresh the app.
 
+## Mobile app (optional)
+
+The phone app lives in `mobile/` and talks to the same API and Firebase project. It runs in **Expo Go**, so you don't build anything.
+
+1. Install **Expo Go** on your phone. The phone must be on the same Wi-Fi as your PC.
+2. Find your PC's IPv4 address. Run `ipconfig` and read the **IPv4 Address** line of your Wi-Fi adapter, for example `192.168.1.20`.
+3. Let the phone reach the API. In an **admin** PowerShell, allow port 8080 once:
+
+   ```powershell
+   New-NetFirewallRule -DisplayName "GG Learn API" -Direction Inbound -LocalPort 8080 -Protocol TCP -Action Allow
+   ```
+
+4. Copy `mobile/.env.example` to `mobile/.env`. Fill it in from the web `.env.local`, but change the prefix from `VITE_` to `EXPO_PUBLIC_`. Then set the API address to your PC:
+
+   ```
+   EXPO_PUBLIC_API_URL=http://<PC-IP>:8080/api
+   ```
+
+5. Start the API (step 5), then run:
+
+   ```sh
+   cd mobile
+   npm install
+   npx expo start
+   ```
+
+   Scan the QR code with Expo Go (Android) or the Camera app (iPhone).
+
 ## Running the tests
 
 ```sh
@@ -114,3 +142,5 @@ cd src/server && ./mvnw test  # backend (use .\mvnw.cmd test on PowerShell)
 | Firebase errors on sign-in / blank app | `.env.local` is missing or in the wrong folder. Restart `npm run dev` after you change it. |
 | CORS error in the browser console | The web app must run on `localhost:5173`. Any other origin needs `CORS_ALLOWED_ORIGINS` set when you start the API. |
 | `java` not found or wrong version | Install JDK 21 and make sure `java -version` shows 21. |
+| Mobile app says offline or can't reach the server | The IP in `EXPO_PUBLIC_API_URL` is wrong, or the firewall blocks port 8080. Re-check `ipconfig` and step 3 of "Mobile app". |
+| Mobile app ignores a change to `mobile/.env` | Restart with `npx expo start -c` to clear the cache. |
