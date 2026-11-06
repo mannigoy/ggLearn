@@ -345,6 +345,100 @@ describe('AuthProvider', () => {
     expect(latest.notice).toBe('');
   });
 
+  describe('stale profile loads', () => {
+    it('drops a getMe result that lands after signOut started', async () => {
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(getMe).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await latest.signOut();
+      });
+      await act(async () => {
+        me.resolve(PROFILE);
+        await me.promise;
+      });
+      expect(latest.profile).toBeNull();
+      expect(latest.user).toBeNull();
+      expect(await cached()).toBeNull();
+    });
+
+    it('ignores a 403 that lands after the user signed out', async () => {
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      await fire(null);
+
+      await act(async () => {
+        me.reject(new ApiError(403, 'Account disabled'));
+        await me.promise.catch(() => {});
+      });
+      expect(latest.notice).toBe('');
+      expect(authService.logout).not.toHaveBeenCalled();
+      expect(latest.user).toBeNull();
+    });
+
+    it('keeps user B when user A’s getMe answers late', async () => {
+      const first = deferred();
+      const USER_B = { uid: 'u2', email: 'ben@example.com' };
+      const PROFILE_B = { uid: 'u2', name: 'Ben', email: USER_B.email, role: 'teacher' };
+      getMe.mockReturnValueOnce(first.promise).mockResolvedValueOnce(PROFILE_B);
+      await mount();
+      await fire(USER);
+      await fire(USER_B);
+      expect(latest.profile).toEqual(PROFILE_B);
+
+      await act(async () => {
+        first.resolve(PROFILE);
+        await first.promise;
+      });
+      expect(latest.user).toBe(USER_B);
+      expect(latest.profile).toEqual(PROFILE_B);
+      expect(await cached()).toBeNull();
+    });
+
+    it('drops a cached profile read that finishes after signOut started', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      getMe.mockRejectedValue(new ApiError(0, OFFLINE));
+      const read = deferred();
+      const realGetItem = AsyncStorage.getItem;
+      const spy = jest.spyOn(AsyncStorage, 'getItem').mockImplementationOnce(() => read.promise);
+      await mount();
+      await fire(USER);
+
+      await act(async () => {
+        await latest.signOut();
+      });
+      await act(async () => {
+        read.resolve(JSON.stringify(PROFILE));
+        await read.promise;
+      });
+      spy.mockRestore();
+      expect(AsyncStorage.getItem).toBe(realGetItem);
+      expect(latest.profile).toBeNull();
+      expect(latest.profileError).toBe('');
+    });
+
+    it('signs out once when getMe itself gets a 401', async () => {
+      getMe.mockImplementation(async () => {
+        configureApi.mock.calls[0][0].onUnauthorized(); // what apiFetch does before throwing
+        throw new ApiError(401, 'Unauthorized');
+      });
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      await mount();
+      await fire(USER);
+      expect(authService.logout).toHaveBeenCalledTimes(1);
+      expect(latest.notice).toBe('Please log in again.');
+      expect(latest.user).toBeNull();
+      expect(latest.profile).toBeNull();
+      expect(latest.profileError).toBe('');
+      expect(await cached()).toBeNull();
+    });
+  });
+
   it('refreshProfile reloads the profile', async () => {
     getMe.mockResolvedValueOnce({ ...PROFILE, role: 'pending_teacher' });
     await mount();
