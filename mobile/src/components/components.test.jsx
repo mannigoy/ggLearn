@@ -1,4 +1,4 @@
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import Button from './Button';
 import Confirm from './Confirm';
@@ -24,10 +24,10 @@ describe('Confirm', () => {
     await render(<Confirm label="Delete" accessibilityLabel="Delete lesson Seeds" onYes={onYes} />);
     await fireEvent.press(screen.getByLabelText('Delete lesson Seeds'));
     expect(screen.getByText('Sure?')).toBeTruthy();
-    await fireEvent.press(screen.getByText('No'));
+    await fireEvent.press(screen.getByLabelText('No, keep Delete lesson Seeds'));
     expect(screen.queryByText('Sure?')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Delete lesson Seeds'));
-    await fireEvent.press(screen.getByText('Yes'));
+    await fireEvent.press(screen.getByLabelText('Yes, Delete lesson Seeds'));
     expect(onYes).toHaveBeenCalledTimes(1);
   });
 });
@@ -48,13 +48,54 @@ describe('ErrorState', () => {
   });
 });
 
-describe('Mascot', () => {
-  it('renders with reduce motion on', async () => {
-    const spy = jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+describe('reduce motion', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  const loopSpy = () =>
+    jest.spyOn(Animated, 'loop').mockReturnValue({ start: jest.fn(), stop: jest.fn() });
+
+  it('Mascot does not animate when reduce motion is on', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+    const loop = loopSpy();
     await render(<Mascot size={80} />);
     await act(async () => {});
-    expect(spy).toHaveBeenCalled();
     expect(screen.getByTestId('mascot')).toBeTruthy();
-    spy.mockRestore();
+    expect(loop).not.toHaveBeenCalled();
+  });
+
+  it('Mascot animates when reduce motion is off', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+    const loop = loopSpy();
+    await render(<Mascot size={80} />);
+    await act(async () => {});
+    expect(loop).toHaveBeenCalled();
+  });
+
+  const pressedTransform = async (reduce) => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(reduce);
+    await render(<Button label="Go" onPress={() => {}} />);
+    await act(async () => {});
+    const btn = screen.getByLabelText('Go');
+    await fireEvent(btn, 'responderGrant', { persist() {}, nativeEvent: { touches: [], timestamp: 0 }, currentTarget: { measure() {} } });
+    return StyleSheet.flatten(screen.getByLabelText('Go').props.style).transform;
+  };
+
+  it('Button press applies no transform under reduce motion', async () => {
+    expect(await pressedTransform(true)).toBeUndefined();
+  });
+
+  it('Button press moves down and shrinks otherwise', async () => {
+    expect(await pressedTransform(false)).toEqual([{ translateY: 2 }, { scale: 0.97 }]);
+  });
+
+  it('removes the reduceMotionChanged subscription on unmount', async () => {
+    const remove = jest.fn();
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+    const add = jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({ remove });
+    const view = await render(<Button label="Go" onPress={() => {}} />);
+    await act(async () => {});
+    expect(add).toHaveBeenCalledWith('reduceMotionChanged', expect.any(Function));
+    await view.unmount();
+    expect(remove).toHaveBeenCalledTimes(1);
   });
 });

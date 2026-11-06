@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 export default function useReduceMotion() {
-  const [reduce, setReduce] = useState(false);
+  const [reduce, setReduce] = useState(true);
   useEffect(() => {
     let alive = true;
     Promise.resolve(AccessibilityInfo.isReduceMotionEnabled()).then((v) => {

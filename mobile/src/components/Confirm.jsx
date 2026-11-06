@@ -13,7 +13,7 @@ export default function Confirm({ label, accessibilityLabel, onYes, message = 'S
     <View style={styles.row}>
       <Text style={styles.msg}>{message}</Text>
       <Button small variant="coral" label="Yes" accessibilityLabel={`Yes, ${accessibilityLabel || label}`} onPress={onYes} />
-      <Button small variant="plain" label="No" accessibilityLabel="No, cancel" onPress={() => setOn(false)} />
+      <Button small variant="plain" label="No" accessibilityLabel={`No, keep ${accessibilityLabel || label}`} onPress={() => setOn(false)} />
     </View>
   );
 }
