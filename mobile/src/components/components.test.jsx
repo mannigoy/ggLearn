@@ -1,6 +1,7 @@
 import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import Button from './Button';
+import Chip from './Chip';
 import Confirm from './Confirm';
 import TextInputField from './TextInputField';
 import { ErrorState } from './States';
@@ -88,6 +89,23 @@ describe('reduce motion', () => {
     expect(await pressedTransform(false)).toEqual([{ translateY: 2 }, { scale: 0.97 }]);
   });
 
+  const chipTransform = async (reduce) => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(reduce);
+    await render(<Chip label="Go" onPress={() => {}} />);
+    await act(async () => {});
+    const chip = screen.getByLabelText('Go');
+    await fireEvent(chip, 'responderGrant', { persist() {}, nativeEvent: { touches: [], timestamp: 0 }, currentTarget: { measure() {} } });
+    return StyleSheet.flatten(screen.getByLabelText('Go').props.style).transform;
+  };
+
+  it('Chip press applies no transform under reduce motion', async () => {
+    expect(await chipTransform(true)).toBeUndefined();
+  });
+
+  it('Chip press scales down otherwise', async () => {
+    expect(await chipTransform(false)).toEqual([{ scale: 0.97 }]);
+  });
+
   it('removes the reduceMotionChanged subscription on unmount', async () => {
     const remove = jest.fn();
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
@@ -97,5 +115,19 @@ describe('reduce motion', () => {
     expect(add).toHaveBeenCalledWith('reduceMotionChanged', expect.any(Function));
     await view.unmount();
     expect(remove).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Chip role', () => {
+  it('defaults to a button reporting selected', async () => {
+    await render(<Chip label="K" selected onPress={() => {}} />);
+    const chip = screen.getByRole('button', { name: 'K' });
+    expect(chip.props.accessibilityState).toEqual({ selected: true });
+  });
+
+  it('radio role reports checked', async () => {
+    await render(<Chip label="Student" role="radio" selected onPress={() => {}} />);
+    const chip = screen.getByRole('radio', { name: 'Student' });
+    expect(chip.props.accessibilityState).toEqual({ checked: true });
   });
 });
