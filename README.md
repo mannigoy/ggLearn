@@ -4,6 +4,8 @@ Hands-on science learning for elementary kids. React + Vite front end, Firebase 
 
 ## Setup
 
+> Joining the team? Follow [SETUP.md](SETUP.md). It uses the existing Firebase project.
+
 1. `npm install`
 2. In the [Firebase console](https://console.firebase.google.com):
    - Create a project and add a **Web app**.
