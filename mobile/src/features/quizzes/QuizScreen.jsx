@@ -25,8 +25,11 @@ export default function QuizScreen({ id }) {
       </>
     );
   }
+  const lessonId = data?.quiz?.lessonId;
   return (
-    <Screen refreshing={reloading} onRefresh={reload}>
+    <Screen
+      back={{ label: 'Back to lesson', fallback: lessonId ? '/lesson/' + lessonId : '/courses' }}
+      refreshing={reloading} onRefresh={reload}>
       {body}
     </Screen>
   );

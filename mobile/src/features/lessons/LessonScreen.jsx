@@ -39,8 +39,13 @@ export default function LessonScreen({ id }) {
       </>
     );
   }
+  const course = data?.course;
+  const back = {
+    label: course ? `Back to course ${course.title}` : 'Back',
+    fallback: course ? '/course/' + data.bundle.lesson.courseId : '/courses',
+  };
   return (
-    <Screen refreshing={reloading} onRefresh={reload}>
+    <Screen back={back} refreshing={reloading} onRefresh={reload}>
       {body}
     </Screen>
   );

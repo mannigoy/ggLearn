@@ -7,7 +7,7 @@ import { getLesson } from '../../services/lessonApi.js';
 import { listQuizzes } from '../../services/quizApi.js';
 import LessonScreen from './LessonScreen';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn() } }));
 jest.mock('../../context/AuthContext.jsx', () => ({ useAuth: jest.fn() }));
 jest.mock('../../services/courseApi.js', () => ({ getCourse: jest.fn() }));
 jest.mock('../../services/lessonApi.js', () => ({ getLesson: jest.fn() }));
@@ -33,6 +33,19 @@ beforeEach(() => {
 });
 
 describe('LessonScreen', () => {
+  it('names the course in the back button and falls back to the course screen', async () => {
+    router.canGoBack.mockReturnValue(false);
+    await render(<LessonScreen id="l1" />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back to course Weather' }));
+    expect(router.replace).toHaveBeenCalledWith('/course/c1');
+  });
+
+  it('shows a plain Back button while the lesson is still loading', async () => {
+    getLesson.mockReturnValue(new Promise(() => {}));
+    await render(<LessonScreen id="l1" />);
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+  });
+
   it('renders the lesson paragraphs and loads by lesson id', async () => {
     await render(<LessonScreen id="l1" />);
     expect(await screen.findByText('First part')).toBeTruthy();

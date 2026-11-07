@@ -6,6 +6,12 @@ import Confirm from './Confirm';
 import TextInputField from './TextInputField';
 import { ErrorState } from './States';
 import Mascot from './Mascot';
+import Screen from './Screen';
+import { router } from 'expo-router';
+
+jest.mock('expo-router', () => ({
+  router: { back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn() },
+}));
 
 describe('Button', () => {
   it('ignores presses while busy and reports disabled', async () => {
@@ -129,5 +135,41 @@ describe('Chip role', () => {
     await render(<Chip label="Student" role="radio" selected onPress={() => {}} />);
     const chip = screen.getByRole('radio', { name: 'Student' });
     expect(chip.props.accessibilityState).toEqual({ checked: true });
+  });
+});
+
+describe('Screen back control', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('renders no back control without the back prop', async () => {
+    await render(<Screen title="Hi" />);
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('renders a labelled 48 by 48 button that goes back when it can', async () => {
+    router.canGoBack.mockReturnValue(true);
+    await render(<Screen back={{ label: 'Back to courses', fallback: '/courses' }} />);
+    const btn = screen.getByRole('button', { name: 'Back to courses' });
+    const style = StyleSheet.flatten(btn.props.style);
+    expect(style.minWidth).toBeGreaterThanOrEqual(48);
+    expect(style.minHeight).toBeGreaterThanOrEqual(48);
+    await fireEvent.press(btn);
+    expect(router.back).toHaveBeenCalledTimes(1);
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('replaces with the fallback when there is nothing to go back to', async () => {
+    router.canGoBack.mockReturnValue(false);
+    await render(<Screen back={{ label: 'Back', fallback: '/course/c1' }} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(router.replace).toHaveBeenCalledWith('/course/c1');
+    expect(router.back).not.toHaveBeenCalled();
+  });
+
+  it('falls back to /courses when no fallback is given', async () => {
+    router.canGoBack.mockReturnValue(false);
+    await render(<Screen back={{ label: 'Back' }} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(router.replace).toHaveBeenCalledWith('/courses');
   });
 });

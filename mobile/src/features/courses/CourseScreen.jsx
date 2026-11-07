@@ -59,7 +59,7 @@ export default function CourseScreen({ id }) {
     );
   }
   return (
-    <Screen refreshing={reloading} onRefresh={refresh}>
+    <Screen back={{ label: 'Back to courses', fallback: '/courses' }} refreshing={reloading} onRefresh={refresh}>
       {body}
     </Screen>
   );

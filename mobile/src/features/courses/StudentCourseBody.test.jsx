@@ -7,7 +7,7 @@ import { listLessons } from '../../services/lessonApi.js';
 import CourseScreen from './CourseScreen';
 import StudentCourseBody from './StudentCourseBody';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn() } }));
 jest.mock('../../context/AuthContext.jsx', () => ({ useAuth: jest.fn() }));
 jest.mock('../../services/courseApi.js', () => ({ getCourse: jest.fn() }));
 jest.mock('../../services/lessonApi.js', () => ({ listLessons: jest.fn() }));
@@ -125,6 +125,16 @@ describe('CourseScreen', () => {
     expect(await screen.findByText('Weather')).toBeTruthy();
     expect(screen.getByText('Grade 3')).toBeTruthy();
     expect(screen.getByText('Earth Science')).toBeTruthy();
+  });
+
+  it('has a Back to courses button that goes back, or to /courses when it cannot', async () => {
+    router.canGoBack.mockReturnValue(true);
+    await render(<CourseScreen id="c1" />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back to courses' }));
+    expect(router.back).toHaveBeenCalled();
+    router.canGoBack.mockReturnValue(false);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to courses' }));
+    expect(router.replace).toHaveBeenCalledWith('/courses');
   });
 
   it('shows a read-only lessons list to staff, with no Enroll or Leave', async () => {
