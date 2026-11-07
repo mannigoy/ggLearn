@@ -1,5 +1,5 @@
-import Placeholder from '../../src/features/me/Placeholder';
+import MyBadges from '../../src/features/badges/MyBadges';
 
 export default function BadgesTab() {
-  return <Placeholder title="Badges" />;
+  return <MyBadges />;
 }
