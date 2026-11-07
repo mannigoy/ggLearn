@@ -3,13 +3,13 @@ import { tokens } from '../theme/tokens';
 import { fonts } from '../theme/fonts';
 import useReduceMotion from './useReduceMotion';
 
-export default function Chip({ label, selected, onPress, role = 'button' }) {
+export default function Chip({ label, selected, onPress, role = 'button', accessibilityLabel }) {
   const reduce = useReduceMotion();
   const radio = role === 'radio';
   return (
     <Pressable
       accessibilityRole={radio ? 'radio' : 'button'}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel || label}
       accessibilityState={radio ? { checked: !!selected } : { selected: !!selected }}
       onPress={onPress}
       style={({ pressed }) => [styles.chip, selected && styles.on, pressed && !reduce && { transform: [{ scale: 0.97 }] }]}

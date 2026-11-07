@@ -34,8 +34,13 @@ describe('StudentCourses', () => {
     await render(<StudentCourses />);
     expect(await screen.findByText('My courses')).toBeTruthy();
     expect(screen.getByText('Browse')).toBeTruthy();
-    const chips = screen.getAllByRole('button', { name: /^(K|[1-6]|All)$/ });
-    expect(chips.map((c) => c.props.accessibilityLabel)).toEqual(['K', '1', '2', '3', '4', '5', '6', 'All']);
+    expect(screen.getByLabelText('Filter by grade').props.accessibilityRole).toBe('radiogroup');
+    const chips = screen.getAllByRole('radio');
+    expect(chips.map((c) => c.props.accessibilityLabel)).toEqual([
+      'Grade K', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'All grades',
+    ]);
+    expect(screen.getByRole('radio', { name: 'All grades' }).props.accessibilityState).toEqual({ checked: true });
+    expect(screen.getByText('K')).toBeTruthy();
     expect(screen.getByText('Grade 3')).toBeTruthy();
     expect(screen.getByText('Earth Science')).toBeTruthy();
     expect(screen.getByText('Ms Rivera')).toBeTruthy();
@@ -94,7 +99,7 @@ describe('StudentCourses', () => {
 
   it('shows an empty state when the grade filter matches nothing', async () => {
     await render(<StudentCourses />);
-    await fireEvent.press(await screen.findByLabelText('5'));
+    await fireEvent.press(await screen.findByLabelText('Grade 5'));
     expect(screen.getByText('No courses for this grade.')).toBeTruthy();
   });
 
@@ -110,6 +115,13 @@ describe('StudentCourses', () => {
     expect(screen.getByText('My courses')).toBeTruthy();
     expect(screen.getByLabelText('Open course Weather')).toBeTruthy();
     await act(async () => finish(courses));
+  });
+
+  it('says there is nothing left to join under All when every course is joined', async () => {
+    myEnrollments.mockResolvedValue([{ courseId: 'c1' }, { courseId: 'c2' }]);
+    await render(<StudentCourses />);
+    expect(await screen.findByText('No more courses to join.')).toBeTruthy();
+    expect(screen.queryByText('No courses for this grade.')).toBeNull();
   });
 
   it('shows a load error with Try again', async () => {

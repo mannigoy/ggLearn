@@ -146,6 +146,12 @@ describe('Chip role', () => {
     expect(chip.props.accessibilityState).toEqual({ selected: true });
   });
 
+  it('uses accessibilityLabel instead of the visible label when given', async () => {
+    await render(<Chip label="K" accessibilityLabel="Grade K" role="radio" onPress={() => {}} />);
+    expect(screen.getByRole('radio', { name: 'Grade K' })).toBeTruthy();
+    expect(screen.getByText('K')).toBeTruthy();
+  });
+
   it('radio role reports checked', async () => {
     await render(<Chip label="Student" role="radio" selected onPress={() => {}} />);
     const chip = screen.getByRole('radio', { name: 'Student' });

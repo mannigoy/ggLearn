@@ -55,13 +55,20 @@ export default function StudentCourses() {
           mine.map((c) => <CourseCard key={c.id} course={c} onPress={() => open(c.id)} />)
         )}
         <Text accessibilityRole="header" style={styles.heading}>Browse</Text>
-        <View style={styles.chips}>
+        <View accessibilityRole="radiogroup" accessibilityLabel="Filter by grade" style={styles.chips}>
           {[...GRADES, 'All'].map((g) => (
-            <Chip key={g} label={g} selected={grade === g} onPress={() => setGrade(g)} />
+            <Chip
+              key={g}
+              role="radio"
+              label={g}
+              accessibilityLabel={g === 'All' ? 'All grades' : `Grade ${g}`}
+              selected={grade === g}
+              onPress={() => setGrade(g)}
+            />
           ))}
         </View>
         {others.length === 0 ? (
-          <Empty title="No courses for this grade." />
+          <Empty title={grade === 'All' ? 'No more courses to join.' : 'No courses for this grade.'} />
         ) : (
           others.map((c) => (
             <CourseCard
