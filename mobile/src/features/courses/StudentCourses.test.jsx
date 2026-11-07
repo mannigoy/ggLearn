@@ -4,7 +4,16 @@ import { listCourses } from '../../services/courseApi.js';
 import { enroll, myEnrollments } from '../../services/enrollmentApi.js';
 import StudentCourses from './StudentCourses';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+const mockFocus = { cb: null };
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useFocusEffect: (cb) => {
+    require('react').useEffect(() => {
+      mockFocus.cb = cb;
+      return cb();
+    }, [cb]);
+  },
+}));
 jest.mock('../../services/courseApi.js', () => ({ listCourses: jest.fn() }));
 jest.mock('../../services/enrollmentApi.js', () => ({ myEnrollments: jest.fn(), enroll: jest.fn() }));
 
@@ -71,6 +80,20 @@ describe('StudentCourses', () => {
     await render(<StudentCourses />);
     await fireEvent.press(await screen.findByLabelText('5'));
     expect(screen.getByText('No courses for this grade.')).toBeTruthy();
+  });
+
+  it('reloads on a later focus but not the first, keeping content on screen', async () => {
+    await render(<StudentCourses />);
+    await screen.findByText('My courses');
+    expect(listCourses).toHaveBeenCalledTimes(1);
+    expect(myEnrollments).toHaveBeenCalledTimes(1);
+    let finish;
+    listCourses.mockReturnValue(new Promise((r) => { finish = r; }));
+    await act(async () => { mockFocus.cb(); });
+    await waitFor(() => expect(listCourses).toHaveBeenCalledTimes(2));
+    expect(screen.getByText('My courses')).toBeTruthy();
+    expect(screen.getByLabelText('Open course Weather')).toBeTruthy();
+    await act(async () => finish(courses));
   });
 
   it('shows a load error with Try again', async () => {

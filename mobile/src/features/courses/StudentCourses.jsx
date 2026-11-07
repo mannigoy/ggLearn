@@ -6,6 +6,7 @@ import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import { Empty, ErrorState, Loading } from '../../components/States';
 import { useAsync } from '../../lib/useAsync.js';
+import { useReloadOnFocus } from '../../lib/useReloadOnFocus.js';
 import { GRADES } from '../../lib/constants.js';
 import { listCourses } from '../../services/courseApi.js';
 import { enroll, myEnrollments } from '../../services/enrollmentApi.js';
@@ -18,6 +19,7 @@ const load = () => Promise.all([listCourses(), myEnrollments()]);
 
 export default function StudentCourses() {
   const { data, error, loading, reloading, reload } = useAsync(load, []);
+  useReloadOnFocus(reload);
   const [grade, setGrade] = useState('All');
   const [busyId, setBusyId] = useState(null);
   const [errors, setErrors] = useState({});

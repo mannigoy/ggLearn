@@ -5,6 +5,7 @@ import Icon from '../../components/Icon';
 import Mascot from '../../components/Mascot';
 import { ErrorState, Loading } from '../../components/States';
 import { useAsync } from '../../lib/useAsync.js';
+import { useReloadOnFocus } from '../../lib/useReloadOnFocus.js';
 import { myBadges } from '../../services/badgeApi.js';
 import { listCourses } from '../../services/courseApi.js';
 import { fonts } from '../../theme/fonts';
@@ -15,6 +16,7 @@ const load = () => Promise.all([myBadges(), listCourses()]);
 
 export default function MyBadges() {
   const { data, error, loading, reloading, reload } = useAsync(load, []);
+  useReloadOnFocus(reload);
 
   let body;
   if (loading) body = <Loading />;

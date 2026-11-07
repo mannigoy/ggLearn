@@ -1,8 +1,17 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { myBadges } from '../../services/badgeApi.js';
 import { listCourses } from '../../services/courseApi.js';
 import MyBadges from './MyBadges';
 
+const mockFocus = { cb: null };
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb) => {
+    require('react').useEffect(() => {
+      mockFocus.cb = cb;
+      return cb();
+    }, [cb]);
+  },
+}));
 jest.mock('../../services/badgeApi.js', () => ({ myBadges: jest.fn() }));
 jest.mock('../../services/courseApi.js', () => ({ listCourses: jest.fn() }));
 
@@ -41,6 +50,21 @@ describe('MyBadges', () => {
     expect(await screen.findByLabelText('Badge A, Plants')).toBeTruthy();
     expect(screen.getByLabelText('Badge B, Course removed')).toBeTruthy();
     expect(screen.queryByText(/Invalid Date/)).toBeNull();
+  });
+
+  it('reloads on a later focus but not the first, keeping badges on screen', async () => {
+    myBadges.mockResolvedValue([{ id: 'b1', courseId: 'c1', title: 'Plant Expert', dateEarned: DATE }]);
+    await render(<MyBadges />);
+    await screen.findByText('Plant Expert');
+    expect(myBadges).toHaveBeenCalledTimes(1);
+    expect(listCourses).toHaveBeenCalledTimes(1);
+    let finish;
+    myBadges.mockReturnValue(new Promise((r) => { finish = r; }));
+    await act(async () => { mockFocus.cb(); });
+    await waitFor(() => expect(myBadges).toHaveBeenCalledTimes(2));
+    expect(screen.getByText('Plant Expert')).toBeTruthy();
+    await act(async () => finish([]));
+    expect(await screen.findByText('No badges yet. Finish a course to earn one.')).toBeTruthy();
   });
 
   it('shows an error with Try again when loading fails', async () => {
