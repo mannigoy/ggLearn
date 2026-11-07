@@ -57,6 +57,22 @@ describe('StudentCourses', () => {
     await waitFor(() => expect(screen.queryByLabelText('Enroll in Plants')).toBeNull());
   });
 
+  it('keeps every Enroll disabled until the reload after enrolling finishes', async () => {
+    listCourses.mockResolvedValue([...courses, { id: 'c3', title: 'Rocks', gradeLevel: 'K', topic: 'earth', teacherName: 'Mr Lee' }]);
+    await render(<StudentCourses />);
+    const plants = await screen.findByLabelText('Enroll in Plants');
+    let finish;
+    myEnrollments.mockReturnValue(new Promise((r) => { finish = r; }));
+    await fireEvent.press(plants);
+    await waitFor(() => expect(enroll).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(myEnrollments).toHaveBeenCalledTimes(2));
+    expect(screen.getByLabelText('Enroll in Rocks').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Enroll in Rocks'));
+    expect(enroll).toHaveBeenCalledTimes(1);
+    await act(async () => finish([{ courseId: 'c1' }, { courseId: 'c2' }]));
+    await waitFor(() => expect(screen.getByLabelText('Enroll in Rocks').props.accessibilityState.disabled).toBe(false));
+  });
+
   it('shows an enroll error inline on that card', async () => {
     enroll.mockRejectedValue(new Error('Course is full'));
     await render(<StudentCourses />);

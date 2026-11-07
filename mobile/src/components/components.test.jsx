@@ -39,6 +39,21 @@ describe('Confirm', () => {
   });
 });
 
+describe('Confirm busy', () => {
+  it('disables Yes and ignores presses while busy, but No stays enabled', async () => {
+    const onYes = jest.fn();
+    const view = await render(<Confirm label="Delete" accessibilityLabel="Delete lesson Seeds" onYes={onYes} />);
+    await fireEvent.press(screen.getByLabelText('Delete lesson Seeds'));
+    await view.rerender(<Confirm label="Delete" accessibilityLabel="Delete lesson Seeds" onYes={onYes} busy />);
+    const yes = screen.getByLabelText('Yes, Delete lesson Seeds');
+    expect(yes.props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('Yes…')).toBeTruthy();
+    await fireEvent.press(yes);
+    expect(onYes).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('No, keep Delete lesson Seeds').props.accessibilityState.disabled).toBe(false);
+  });
+});
+
 describe('TextInputField', () => {
   it('renders the error with role alert', async () => {
     await render(<TextInputField label="Name" value="" onChangeText={() => {}} error="Name is required" />);

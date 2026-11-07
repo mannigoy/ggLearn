@@ -34,18 +34,20 @@ export function LessonList({ lessons }) {
 
 export default function StudentCourseBody({ course, refreshKey = 0 }) {
   const { profile } = useAuth();
-  const { data, error, loading, reload } = useAsync(async () => {
+  const { data, error, loading, reloading, reload } = useAsync(async () => {
     const mine = await myEnrollments();
     const enrolled = mine.some((e) => e.courseId === course.id);
     return { enrolled, lessons: enrolled ? await listLessons(course.id) : null };
   }, [course.id]);
   useRefreshOn(refreshKey, reload);
-  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Stay busy through the reload that follows an action, so a second tap can't repeat it.
+  const busy = saving || reloading;
   const [actionError, setActionError] = useState('');
 
   const run = async (action, fallback) => {
     if (busy) return;
-    setBusy(true);
+    setSaving(true);
     setActionError('');
     try {
       await action();
@@ -53,7 +55,7 @@ export default function StudentCourseBody({ course, refreshKey = 0 }) {
     } catch (err) {
       setActionError(err?.message || fallback);
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   };
 
@@ -74,6 +76,7 @@ export default function StudentCourseBody({ course, refreshKey = 0 }) {
             <Confirm
               label="Leave course"
               accessibilityLabel={`Leave course ${course.title}`}
+              busy={busy}
               onYes={() => run(() => unenroll(course.id, profile.uid), 'Could not leave. Please try again.')}
             />
             {problem}

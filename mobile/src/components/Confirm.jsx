@@ -4,7 +4,7 @@ import { tokens } from '../theme/tokens';
 import { fonts } from '../theme/fonts';
 import Button from './Button';
 
-export default function Confirm({ label, accessibilityLabel, onYes, message = 'Sure?' }) {
+export default function Confirm({ label, accessibilityLabel, onYes, message = 'Sure?', busy = false }) {
   const [on, setOn] = useState(false);
   if (!on) {
     return <Button small variant="plain" label={label} accessibilityLabel={accessibilityLabel} onPress={() => setOn(true)} />;
@@ -12,7 +12,7 @@ export default function Confirm({ label, accessibilityLabel, onYes, message = 'S
   return (
     <View style={styles.row}>
       <Text style={styles.msg}>{message}</Text>
-      <Button small variant="coral" label="Yes" accessibilityLabel={`Yes, ${accessibilityLabel || label}`} onPress={onYes} />
+      <Button small variant="coral" label="Yes" busy={busy} accessibilityLabel={`Yes, ${accessibilityLabel || label}`} onPress={onYes} />
       <Button small variant="plain" label="No" accessibilityLabel={`No, keep ${accessibilityLabel || label}`} onPress={() => setOn(false)} />
     </View>
   );

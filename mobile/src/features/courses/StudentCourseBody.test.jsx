@@ -58,6 +58,37 @@ describe('StudentCourseBody', () => {
     expect(screen.queryByLabelText('Open lesson Rain')).toBeNull();
   });
 
+  it('keeps Yes disabled after Leave until the reload finishes', async () => {
+    await render(<StudentCourseBody course={course} />);
+    await fireEvent.press(await screen.findByLabelText('Leave course Weather'));
+    let finish;
+    myEnrollments.mockReturnValue(new Promise((r) => { finish = r; }));
+    await fireEvent.press(screen.getByText('Yes'));
+    await waitFor(() => expect(myEnrollments).toHaveBeenCalledTimes(2));
+    const yes = screen.getByLabelText('Yes, Leave course Weather');
+    expect(yes.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(yes);
+    expect(unenroll).toHaveBeenCalledTimes(1);
+    await act(async () => finish([]));
+    expect(await screen.findByText('Enroll in this course')).toBeTruthy();
+  });
+
+  it('keeps Enroll disabled after enrolling until the reload finishes', async () => {
+    myEnrollments.mockResolvedValue([]);
+    await render(<StudentCourseBody course={course} />);
+    const join = await screen.findByText('Enroll in this course');
+    let finish;
+    myEnrollments.mockReturnValue(new Promise((r) => { finish = r; }));
+    await fireEvent.press(join);
+    await waitFor(() => expect(myEnrollments).toHaveBeenCalledTimes(2));
+    const btn = screen.getByLabelText('Enroll in this course');
+    expect(btn.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(btn);
+    expect(enroll).toHaveBeenCalledTimes(1);
+    await act(async () => finish([{ courseId: 'c1' }]));
+    expect(await screen.findByLabelText('Open lesson Rain')).toBeTruthy();
+  });
+
   it('shows an inline error when leaving fails', async () => {
     unenroll.mockRejectedValue(new Error('Server said no'));
     await render(<StudentCourseBody course={course} />);

@@ -75,7 +75,7 @@ export default function StudentCourses() {
                     label="Enroll"
                     accessibilityLabel={`Enroll in ${c.title}`}
                     busy={busyId === c.id}
-                    disabled={!!busyId}
+                    disabled={!!busyId || reloading}
                     onPress={() => join(c.id)}
                   />
                   {errors[c.id] ? (
