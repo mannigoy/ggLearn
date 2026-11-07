@@ -42,6 +42,8 @@ const routes = {
   '(auth)/login': () => <Text>login screen</Text>,
   '(tabs)/courses/index': () => <Text>courses tab</Text>,
   'course/[id]': CourseStub,
+  'lesson/[id]': () => <Text>lesson screen</Text>,
+  'quiz/[id]': () => <Text>quiz screen</Text>,
 };
 
 let emit;
@@ -73,5 +75,21 @@ describe('course/[id] route guard', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
     expect(await screen.findByText('login screen')).toBeTruthy();
     expect(screen.queryByText('course screen')).toBeNull();
+  });
+});
+
+describe('lesson/[id] and quiz/[id] route guards', () => {
+  it('does not open a lesson for a signed-out user', async () => {
+    await renderRouter(routes, { initialUrl: '/lesson/l1' });
+    await act(async () => emit(null));
+    expect(await screen.findByText('login screen')).toBeTruthy();
+    expect(screen.queryByText('lesson screen')).toBeNull();
+  });
+
+  it('does not open a quiz for a signed-out user', async () => {
+    await renderRouter(routes, { initialUrl: '/quiz/q1' });
+    await act(async () => emit(null));
+    expect(await screen.findByText('login screen')).toBeTruthy();
+    expect(screen.queryByText('quiz screen')).toBeNull();
   });
 });

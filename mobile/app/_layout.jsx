@@ -34,6 +34,8 @@ function RootStack({ fontsReady }) {
       <Stack.Protected guard={route === 'tabs'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="course/[id]" />
+        <Stack.Screen name="lesson/[id]" />
+        <Stack.Screen name="quiz/[id]" />
       </Stack.Protected>
     </Stack>
   );
