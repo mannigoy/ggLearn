@@ -70,7 +70,7 @@ export default function SignupScreen() {
       <Text style={styles.label}>I am a</Text>
       <View accessibilityRole="radiogroup" style={styles.roles}>
         {SIGN_UP_ROLES.map((role) => (
-          <Chip key={role} label={ROLE_LABELS[role]} selected={form.role === role} onPress={() => set('role')(role)} />
+          <Chip key={role} role="radio" label={ROLE_LABELS[role]} selected={form.role === role} onPress={() => set('role')(role)} />
         ))}
       </View>
       {form.role === ROLES.TEACHER ? (

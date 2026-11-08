@@ -144,3 +144,4 @@ cd src/server && ./mvnw test  # backend (use .\mvnw.cmd test on PowerShell)
 | `java` not found or wrong version | Install JDK 21 and make sure `java -version` shows 21. |
 | Mobile app says offline or can't reach the server | The IP in `EXPO_PUBLIC_API_URL` is wrong, or the firewall blocks port 8080. Re-check `ipconfig` and step 3 of "Mobile app". |
 | Mobile app ignores a change to `mobile/.env` | Restart with `npx expo start -c` to clear the cache. |
+| Expo Go hangs on "Opening project…" | The Windows firewall blocks Metro on port 8081. In an **admin** PowerShell, run `New-NetFirewallRule -DisplayName "GG Learn Metro" -Direction Inbound -LocalPort 8081 -Protocol TCP -Action Allow` (or allow Node when Windows asks). Or start with `npx expo start --tunnel` instead. |

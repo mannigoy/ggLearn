@@ -122,10 +122,19 @@ export function AuthProvider({ children }) {
         loadIdRef.current += 1;
         return;
       }
+      // Start from the cached profile so a phone that can't reach the PC isn't stuck on the splash
+      // screen; GET /me then refreshes it in the background (404/403 still sign out).
+      const id = ++loadIdRef.current;
+      const saved = await readProfile(next.uid);
+      if (id !== loadIdRef.current) return;
+      if (saved) {
+        showProfile(saved);
+        setLoading(false);
+      }
       await loadProfile(next.uid, { fresh: true });
       setLoading(false);
     });
-  }, [clearSession, loadProfile]);
+  }, [clearSession, loadProfile, showProfile]);
 
   const signIn = useCallback(async (email, password) => {
     setNotice('');

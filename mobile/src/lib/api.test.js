@@ -29,7 +29,12 @@ describe('apiFetch', () => {
       onUnauthorized,
       isOffline: async () => false
     };
-    configureApi(base);
+    // timeoutMs: undefined restores the built-in 15 s default between tests.
+    configureApi({ ...base, timeoutMs: undefined });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('sends bearer token and JSON body', async () => {
@@ -132,5 +137,136 @@ describe('apiFetch', () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(200);
     expect(error.message).toBe('Something went wrong. Please try again.');
+  });
+
+  describe('timeout', () => {
+    // A fetch that hangs until its AbortSignal fires, like a phone that can't reach the PC.
+    // If nothing aborts it, it answers 200 after `fallbackMs`, so a missing timeout fails the test
+    // instead of hanging it.
+    const hangingFetch = (fallbackMs = 500) =>
+      jest.fn(
+        (url, init) =>
+          new Promise((resolve, reject) => {
+            const fallback = setTimeout(() => resolve(jsonResponse(200, { never: 'aborted' })), fallbackMs);
+            init.signal?.addEventListener('abort', () => {
+              clearTimeout(fallback);
+              const err = new Error('Aborted');
+              err.name = 'AbortError';
+              reject(err);
+            });
+          })
+      );
+
+    it('aborts after timeoutMs and says the server is unreachable', async () => {
+      configureApi({ ...base, timeoutMs: 20 });
+      globalThis.fetch = hangingFetch();
+      await expect(apiFetch('/me')).rejects.toMatchObject({
+        status: 0,
+        message: 'Can’t reach the GG Learn server. Is the backend running?'
+      });
+    });
+
+    it('says the phone is offline when a timed-out call finds no connection', async () => {
+      configureApi({ ...base, timeoutMs: 20, isOffline: async () => true });
+      globalThis.fetch = hangingFetch();
+      await expect(apiFetch('/me')).rejects.toMatchObject({
+        status: 0,
+        message: 'You’re offline. Check your internet and try again.'
+      });
+    });
+
+    it('waits 15 seconds by default', async () => {
+      jest.useFakeTimers();
+      globalThis.fetch = hangingFetch(20000);
+      const result = apiFetch('/me').catch((e) => e);
+      await jest.advanceTimersByTimeAsync(14999);
+      expect(globalThis.fetch.mock.calls[0][1].signal.aborted).toBe(false);
+      await jest.advanceTimersByTimeAsync(1);
+      const error = await result;
+      expect(error).toBeInstanceOf(ApiError);
+      expect(error.status).toBe(0);
+      expect(error.message).toBe('Can’t reach the GG Learn server. Is the backend running?');
+    });
+
+    it('clears the timer once the response arrives', async () => {
+      jest.useFakeTimers();
+      globalThis.fetch.mockResolvedValue(jsonResponse(200, { id: 'c1' }));
+      await expect(apiFetch('/courses')).resolves.toEqual({ id: 'c1' });
+      expect(jest.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe('token refresh failures', () => {
+    const networkTokenError = () =>
+      Object.assign(new Error('Firebase: Error (auth/network-request-failed).'), {
+        code: 'auth/network-request-failed'
+      });
+
+    it('says the phone is offline when the token cannot refresh offline', async () => {
+      configureApi({
+        ...base,
+        isOffline: async () => true,
+        getToken: async () => {
+          throw networkTokenError();
+        }
+      });
+      await expect(apiFetch('/courses')).rejects.toMatchObject({
+        status: 0,
+        message: 'You’re offline. Check your internet and try again.'
+      });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it('says the server is unreachable on a token network failure while online', async () => {
+      configureApi({
+        ...base,
+        getToken: async () => {
+          throw networkTokenError();
+        }
+      });
+      await expect(apiFetch('/courses')).rejects.toMatchObject({
+        status: 0,
+        message: 'Can’t reach the GG Learn server. Is the backend running?'
+      });
+    });
+
+    it('says the phone is offline for any token failure when NetInfo reports offline', async () => {
+      configureApi({
+        ...base,
+        isOffline: async () => true,
+        getToken: async () => {
+          throw new Error('token expired');
+        }
+      });
+      await expect(apiFetch('/courses')).rejects.toMatchObject({
+        status: 0,
+        message: 'You’re offline. Check your internet and try again.'
+      });
+    });
+  });
+
+  describe('isOffline that is not async', () => {
+    it('accepts a synchronous isOffline', async () => {
+      configureApi({ ...base, isOffline: () => true });
+      globalThis.fetch = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
+      await expect(apiFetch('/courses')).rejects.toMatchObject({
+        status: 0,
+        message: 'You’re offline. Check your internet and try again.'
+      });
+    });
+
+    it('treats an isOffline that throws synchronously as online', async () => {
+      configureApi({
+        ...base,
+        isOffline: () => {
+          throw new Error('NetInfo broke');
+        }
+      });
+      globalThis.fetch = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
+      await expect(apiFetch('/courses')).rejects.toMatchObject({
+        status: 0,
+        message: 'Can’t reach the GG Learn server. Is the backend running?'
+      });
+    });
   });
 });

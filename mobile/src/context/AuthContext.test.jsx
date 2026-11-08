@@ -401,13 +401,18 @@ describe('AuthProvider', () => {
     });
 
     it('drops a cached profile read that finishes after signOut started', async () => {
-      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      // Nothing is cached at start-up, so getMe runs; its failure falls back to a second cache
+      // read, which is held until after signOut.
       getMe.mockRejectedValue(new ApiError(0, OFFLINE));
       const read = deferred();
-      const realGetItem = AsyncStorage.getItem;
-      const spy = jest.spyOn(AsyncStorage, 'getItem').mockImplementationOnce(() => read.promise);
+      // getItem is already a jest.fn in the official mock; queue one-off answers on it (a spy's
+      // mockRestore would wipe the mock's own implementation for later tests).
+      AsyncStorage.getItem
+        .mockImplementationOnce(async () => null)
+        .mockImplementationOnce(() => read.promise);
       await mount();
       await fire(USER);
+      expect(getMe).toHaveBeenCalledTimes(1);
 
       await act(async () => {
         await latest.signOut();
@@ -416,8 +421,6 @@ describe('AuthProvider', () => {
         read.resolve(JSON.stringify(PROFILE));
         await read.promise;
       });
-      spy.mockRestore();
-      expect(AsyncStorage.getItem).toBe(realGetItem);
       expect(latest.profile).toBeNull();
       expect(latest.profileError).toBe('');
     });
@@ -450,5 +453,132 @@ describe('AuthProvider', () => {
       await latest.refreshProfile();
     });
     expect(latest.profile.role).toBe('teacher');
+  });
+
+  describe('start-up from the cached profile', () => {
+    it('shows the cached profile at once while getMe is still running', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(getMe).toHaveBeenCalledTimes(1);
+      expect(latest.loading).toBe(false);
+      expect(latest.user).toBe(USER);
+      expect(latest.profile).toEqual(PROFILE);
+      expect(latest.profileError).toBe('');
+
+      const fresh = { ...PROFILE, name: 'Ana Cruz' };
+      await act(async () => {
+        me.resolve(fresh);
+        await me.promise;
+      });
+      expect(latest.profile).toEqual(fresh);
+      expect(await cached()).toEqual(fresh);
+    });
+
+    it('keeps the cached profile without an error when the background getMe fails', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(latest.loading).toBe(false);
+
+      await act(async () => {
+        me.reject(new ApiError(0, 'Can’t reach the GG Learn server. Is the backend running?'));
+        await me.promise.catch(() => {});
+      });
+      expect(authService.logout).not.toHaveBeenCalled();
+      expect(latest.profile).toEqual(PROFILE);
+      expect(latest.profileError).toBe('');
+      expect(await cached()).toEqual(PROFILE);
+    });
+
+    it('signs out with the turned-off notice when the background getMe answers 403', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(latest.profile).toEqual(PROFILE);
+
+      await act(async () => {
+        me.reject(new ApiError(403, 'Account disabled'));
+        await me.promise.catch(() => {});
+      });
+      expect(authService.logout).toHaveBeenCalledTimes(1);
+      expect(latest.notice).toBe('Your account is turned off. Ask your admin.');
+      expect(latest.user).toBeNull();
+      expect(latest.profile).toBeNull();
+      expect(latest.loading).toBe(false);
+      expect(await cached()).toBeNull();
+    });
+
+    it('signs out with the no-profile notice when the background getMe answers 404', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(PROFILE));
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(latest.profile).toEqual(PROFILE);
+
+      await act(async () => {
+        me.reject(new ApiError(404, 'User not found'));
+        await me.promise.catch(() => {});
+      });
+      expect(authService.logout).toHaveBeenCalledTimes(1);
+      expect(latest.notice).toBe('Your account has no profile yet.');
+      expect(latest.profile).toBeNull();
+      expect(await cached()).toBeNull();
+    });
+
+    it('stays loading until getMe answers when nothing is cached', async () => {
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(latest.loading).toBe(true);
+      expect(latest.profile).toBeNull();
+
+      await act(async () => {
+        me.resolve(PROFILE);
+        await me.promise;
+      });
+      expect(latest.loading).toBe(false);
+      expect(latest.profile).toEqual(PROFILE);
+    });
+
+    it('drops a start-up cache read that finishes after the user signed out', async () => {
+      const read = deferred();
+      AsyncStorage.getItem.mockImplementationOnce(() => read.promise);
+      getMe.mockResolvedValue(PROFILE);
+      await mount();
+      await fire(USER);
+      await fire(null);
+
+      await act(async () => {
+        read.resolve(JSON.stringify(PROFILE));
+        await read.promise;
+      });
+      expect(latest.user).toBeNull();
+      expect(latest.profile).toBeNull();
+      expect(getMe).not.toHaveBeenCalled();
+    });
+
+    it('ignores a cache read for another account', async () => {
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ ...PROFILE, uid: 'u9' }));
+      const me = deferred();
+      getMe.mockReturnValue(me.promise);
+      await mount();
+      await fire(USER);
+      expect(latest.loading).toBe(true);
+      expect(latest.profile).toBeNull();
+      await act(async () => {
+        me.resolve(PROFILE);
+        await me.promise;
+      });
+      expect(latest.profile).toEqual(PROFILE);
+    });
   });
 });

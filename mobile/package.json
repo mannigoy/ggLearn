@@ -41,6 +41,8 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "maxWorkers": "50%",
+    "testTimeout": 60000,
     "setupFiles": [
       "./jest.setup.js"
     ],

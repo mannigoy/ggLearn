@@ -1,15 +1,18 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { tokens } from '../theme/tokens';
 import { fonts } from '../theme/fonts';
+import useReduceMotion from './useReduceMotion';
 
-export default function Chip({ label, selected, onPress }) {
+export default function Chip({ label, selected, onPress, role = 'button', accessibilityLabel }) {
+  const reduce = useReduceMotion();
+  const radio = role === 'radio';
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: !!selected }}
+      accessibilityRole={radio ? 'radio' : 'button'}
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityState={radio ? { checked: !!selected } : { selected: !!selected }}
       onPress={onPress}
-      style={[styles.chip, selected && styles.on]}
+      style={({ pressed }) => [styles.chip, selected && styles.on, pressed && !reduce && { transform: [{ scale: 0.97 }] }]}
     >
       <Text style={[styles.text, selected && styles.textOn]}>{label}</Text>
     </Pressable>
